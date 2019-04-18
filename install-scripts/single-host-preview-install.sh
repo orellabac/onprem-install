@@ -17,6 +17,38 @@ function check_env {
 	echo $rc
 }
 
+function run_containers {
+	echo "running rabbitMQ..."
+	docker run -d -P --network="host" --name csrabbitmq teamcodestream/rabbitmq-onprem:0.0.0
+	sleep 7
+	echo "running broadcaster..."
+	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csbcast teamcodestream/broadcaster-onprem:0.0.0
+	sleep 7
+	echo "running api..."
+	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csapi teamcodestream/api-onprem:0.0.0
+	echo "running outbound mail service..."
+	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csmailout teamcodestream/mailout-onprem:0.0.0
+}
+
+function start_containers {
+	echo "starting rabbitMQ..."
+	docker start csrabbitmq
+	sleep 7
+	echo "starting broadcaster..."
+	docker start csbcast
+	sleep 7
+	echo "starting api and outbound mail service..."
+	docker start csapi csmailout
+}
+
+function stop_containers {
+	docker stop csapi csmailout csbcast csrabbitmq
+}
+
+function remove_containers {
+	docker rm csapi csmailout csbcast csrabbitmq
+}
+
 runMode=individual
 action=""
 while getopts "ca:" arg
@@ -32,17 +64,22 @@ shift `expr $OPTIND - 1`
 
 [ $(check_env) -eq 1 ] && exit 1
 
+if [ $action == "reset" ]; then
+	echo "Stopping and removing codestream containers..."
+	stop_containers
+	remove_containers
+	exit 0
+fi
+
+if [ $action == "start" ]; then
+	echo "Stopping and removing codestream containers..."
+	start_containers
+	exit 0
+fi
+
 if [ $action == "run"  -a  $runMode == "individual" ]; then
-	echo "running rabbitMQ..."
-	docker run -d -P --network="host" --name csrabbitmq teamcodestream/rabbitmq-onprem:0.0.0
-	sleep 7
-	echo "running broadcaster..."
-	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csbcast teamcodestream/broadcaster-onprem:0.0.0
-	sleep 7
-	echo "running api..."
-	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csapi teamcodestream/api-onprem:0.0.0
-	echo "running outbound mail service..."
-	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csmailout teamcodestream/mailout-onprem:0.0.0
+	run_containers
+	exit 0
 fi
 
 exit 0

@@ -4,23 +4,23 @@
 The single host preview of CodeStream OnPrem installs docker containers for all
 of the CodeStream services using a docker host network; each service will be
 accessible independently, all running on single host. This has been tested on
-Amazon Linux EC2 (RedHat, CentOS, Fedora, ...).
+Amazon Linux AMI (RedHat, CentOS, Fedora, ...).
 
 ## Prerequisites
 1. A linux server with the docker and docker-compose services installed and
 running. Make sure the system user account you intend to use for running
-CodeStream is able to run docker commands.
+CodeStream is able to run docker commands.  The system should also have the
+`curl` command.
 
 1. A valid SSL certificate along with it's corresponding Key file and
 Certificate Authority bundle file.
 
 ## Setup the configuration
 
-1. Clone the https://github.com/teamcodestream/codestream-onprem repository in
-your home directory.
+1. Get the installation script
     ```
-    $ cd $HOME
-    $ git clone https://github.com/teamcodestream/codestream-onprem
+    $ curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o single-host-preview-install.sh
+    $ chmod +x single-host-preview-install.sh
     ```
 
 1. Copy the template codestream config file from the onprem repo to the
@@ -42,8 +42,7 @@ predefined configuration directory (~/.codestream).
 
 ### Start the service for the first time
 ```
-$ cd ~/.codestream
-$ docker-compose -f single-host-preview.yaml up -d
+$ single-host-preview-install -a run
 ```
 
 ### Stop the service
