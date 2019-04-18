@@ -1,0 +1,55 @@
+version: "3"
+
+services:
+    # mongo:
+    #     image: mongo:3.4.9
+    #     container_name: csmongo
+    #     environment:
+    #         - discovery.type=single-node
+    #     ports:
+    #         - 27017:27017
+    #     volumes:
+    #         - cs-mongo-data:/data
+    #             driver: local
+    #     network_mode: host
+
+    rabbitmq:
+        image: teamcodestream/rabbitmq-onprem:0.0.0
+        container_name: csbcast
+        ports:
+            - 5672:5672
+            - 15672:15672
+        network_mode: host
+
+    broadcaster:
+        image: teamcodestream/broadcaster-onprem:0.0.0
+        container_name: csbcast
+        ports:
+            - 12443:12443
+        network_mode: host
+
+    mailout:
+        image: teamcodestream/mailout-onprem:0.0.0
+        container_name: csmailout
+        network_mode: host
+
+    api:
+        depends_on:
+            - mongo
+            - rabbitmq
+            - broadcaster
+        image: teamcodestream/api-onprem:0.0.0
+        container_name: csapi
+        ports:
+            - 443:443
+        volumes:
+            - ~/.codestream:/opt/config
+        network_mode: host
+        # env_file:
+        #     - runtime.env
+
+    # webapp:
+    #     image: teamcodestream/local-web-app:{{ WEBAPP_VERSION }}
+    #     container_name: web-app
+    #     ports:
+    #         - 1380:1380
