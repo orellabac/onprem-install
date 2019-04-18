@@ -1,0 +1,187 @@
+{
+	"apiProtocol": {
+		"port": 443,
+		"https": {
+			"keyfile": "/opt/config/{{SSL_KEY_FILE}}",
+			"certfile": "/opt/config/{{SSL_CERT_FILE}}",
+			"cafile": "/opt/config/{{SSL_CA_FILE}}"
+		}
+	},
+	"apiServer": {
+		"confirmationNotRequired": "",
+		"sessionAwayTimeout": 600000,
+		"helpIsAvailable": "1",
+		"forgotPasswordExpiration": 86400000,
+		"confirmationExpiration": 86400000,
+		"confirmCodeExpiration": 604800000,
+		"signupTokenExpiration": 600000,
+		"assetEnvironment": "onprem",
+		"publicApiUrl": "https://{{FQHN}}",
+		"authOrigin": "",
+		"environment": "onprem",
+		"callbackEnvironment": "",
+		"dontWantAWS": true
+	},
+	"webAppServer": {
+		"host": "https://op1-app.codestream.us",
+		"marketingHost": ""
+	},
+	"apiServerLogging": {
+		"directory": "/opt/api/log",
+		"consoleOk": "1",
+		"debugOk": ""
+	},
+	"inboundMailLogging": {
+		"directory": "/opt/mailin/log",
+		"consoleOk": "1"
+	},
+	"outboundMailLogging": {
+		"directory": "/opt/mailout/log",
+		"consoleOk": "1"
+	},
+	"broadcastEngine": {
+		"pubnub": {
+			"publicKey": "",
+			"subscribeKey": "",
+			"secretKey": "",
+			"ssl": true,
+			"keepAlive": true,
+			"uuid": "CodeStreamServer"
+		},
+		"codestreamBroadcaster": {
+			"port": 12443,
+			"host": "{{FQHN}}",
+			"logger": {
+				"directory": "/opt/broadcaster/log",
+				"consoleOk": true
+			},
+			"secrets": {
+				"api": "{{SECRET_BROADCAST_API}}",
+				"auth": "{{SECRET_BROADCAST_AUTH}}"
+			}
+		}
+	},
+	"queuingEngine": {
+		"rabbitmq": {
+			"host": "{{FQHN}}",
+			"port": "5672",
+			"user": "code",
+			"password": "stream"
+		},
+		"awsSQS": {
+			"region": "us-east-1",
+			"sqs": {
+				"outboundEmailQueueName": "outboundEmail"
+			}
+		}
+	},
+	"emailDeliveryService": {
+		"sendgrid": {
+			"url": "",
+			"apiKey": "",
+			"emailTo": ""
+		},
+		"NodeMailer": {
+			"service": "",
+			"host": "",
+			"port": "",
+			"username": "",
+			"password": "",
+			"emailTo": ""
+		}
+	},
+	"secrets": {
+		"auth": "{{SECRET_AUTH}}",
+		"cookie": "{{SECRET_COOKIE}}",
+		"confirmationCheat": "{{SECRET_CONFIRMATION_CHEAT}}",
+		"subscriptionCheat": "{{SECRET_SUBSCRIPTION_CHEAT}}",
+		"mail": "{{SECRET_MAIL}}",
+		"telemetry": "{{SECRET_TELEMETRY}}"
+	},
+	"integrations": {
+		"slack": {
+			"slack.com": {
+				"appClientId": "",
+				"appClientSecret": ""
+			}
+		},
+		"trello": {
+			"trello.com": {
+				"apiKey": ""
+			}
+		},
+		"asana": {
+			"asana.com": {
+				"desc": "Asana Cloud Service OAuth Integration",
+				"appClientId": "",
+				"appClientSecret": ""
+			}
+		},
+		"bitbucket": {
+			"bitbucket.com": {
+				"desc": "BitBucket Cloud Service OAuth Integration",
+				"appClientId": "",
+				"appClientSecret": ""
+			}
+		},
+		"gitlab": {
+			"gitlab.com": {
+				"desc": "GitLab Cloud Service OAuth Integration",
+				"appClientId": "",
+				"appClientSecret": ""
+			}
+		},
+		"glip": {
+			"glip.com": {
+				"desc": "Glip Cloud Service OAuth Integration",
+				"appClientId": "",
+				"appClientSecret": ""
+			}
+		},
+		"jira": {
+			"atlassian.com": {
+				"desc": "Jira Cloud Service OAuth Intregration",
+				"appClientId": "",
+				"appClientSecret": ""
+			}
+		},
+		"github": {
+			"github.com": {
+				"desc": "Github Cloud Service OAuth Integration",
+				"appClientId": "",
+				"appClientSecret": ""
+			},
+			"git.mydomain.com": {
+				"desc": "Github Enterprise Server On-Prem OAuth Integration",
+				"appClientId": "",
+				"appClientSecret": "",
+				"localProvider": true
+			}
+		},
+		"msteams": {
+			"microsoft.com": {
+				"desc": "MS Teams Cloud Service Oauth Integration",
+				"appClientId": "",
+				"appClientSecret": ""
+			}
+		}
+	},
+	"segment": {
+		"token": "",
+		"webToken": ""
+	},
+	"mongo": {
+		"url": "mongodb://localhost.codestream.us:27017/codestream",
+		"database": "codestream"
+	},
+	"email": {
+		"replyToDomain": "{{FQHN}}",
+		"notificationInterval": 300000,
+		"suppressEmails": true,
+		"inboundEmailDirectory": "/opt/mailin/inbound/node/new",
+		"processDirectory": "/opt/mailin/mailq/process",
+		"tempAttachmentDirectory": "/opt/mailin/mailq/attachments",
+		"senderEmail": "{{SENDER_EMAIL}}",
+		"supportEmail": "{{SUPPORT_EMAIL}}"
+	}
+}
