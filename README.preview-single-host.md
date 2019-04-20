@@ -10,7 +10,7 @@ This has been tested on Amazon Linux AMI (RedHat, CentOS, Fedora, ...).
 
 ## Prerequisites
 
-1. A linux server with docker installed and running. It should also have the
+1. A linux server with docker installed and running. It should have the
 `docker-compose` and `curl` commands available as well. Make sure the
 system user account you intend to use for running CodeStream is able to run
 docker commands.  The fully qualified hostname of the linux server should be
@@ -50,9 +50,9 @@ a **GMail** or **G-Suite** account, set the following properties:
         "service": "gmail",
         "host": "smtp.gmail.com",
         "port": "587",
-        "username": "",  // Your GMail or G-Suite account email address
-        "password": "",  // Your GMail or G-Suite account password (plain text)
-        "emailTo": ""    // if you want all mail diverted to a single address, enter it here
+        "username": "",  // Your GMail or G-Suite account email address (required)
+        "password": "",  // Your GMail or G-Suite account password (required, plain text)
+        "emailTo": ""    // if you want all mail diverted to a single address, enter it here (optional)
     }
     ```
     You must also configure your **GMail** or **G-Suite** account to allow
@@ -80,7 +80,7 @@ requests. We provide an example of this using **nginx**.
   # Nginx proxy config to forward CodeStream auth requests to the CodeStream API
   server {
       listen 443 ssl;
-      server_name my-codestream-proxy.my-domain.com;
+      server_name my-codestream-proxy.my-company.com;
       access_log /var/log/nginx/my-codestream-proxy.access.log main;
       error_log /var/log/nginx/my-codestream-proxy.error.log;
       ssl_certificate /etc/pki/my-cert.fullchain;
@@ -90,7 +90,7 @@ requests. We provide an example of this using **nginx**.
           return 302 "$uri";
       }
 
-      set $p_host codestream-api-server.my-domain.com;
+      set $p_host codestream-api-server.my-company.com;
 
       location /no-auth {
           # set this to your host's DNS resolver IP address (usually found in /etc/resolve.conf)
@@ -114,7 +114,7 @@ requests. We provide an example of this using **nginx**.
       **Confirm user’s identity (identity.basic)** scope and press the "Save
       Changes" button.
     - Also on the **OAuth & Permissions** page, in the **Redirect URL's** section,
-      add the URL **https://codestream-auth-proxy.my-company.com/no-auth/provider-token/slack**
+      add the URL **https://my-codestream-proxy.my-company.com/no-auth/provider-token/slack**
       and press the "Save URLs" button.
     - On the **Basic Information** page, install the App into your workspace.
 
@@ -124,7 +124,7 @@ requests. We provide an example of this using **nginx**.
       property.
     - Copy the *Client Secret* and add it to your CodeStream configuration
       for the `integrations.slack."slack.com".appClientSecret` property.
-    - Set the `apiServer.authOrigin` property to **"https://codestream-auth-proxy.my-company.com/no-auth"**
+    - Set the `apiServer.authOrigin` property to **"https://my-codestream-proxy.my-company.com/no-auth"**
 
 
 ## Starting and Stopping CodeStream
