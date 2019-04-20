@@ -92,12 +92,12 @@ function start_containers {
 
 function stop_containers {
 	docker stop csapi csmailout csbcast csrabbitmq
-	[ $runMongo -eq 1 ] && docker stop mongo
+	[ $runMongo -eq 1 ] && docker stop csmongo
 }
 
 function remove_containers {
 	docker rm csapi csmailout csbcast csrabbitmq
-	[ $runMongo -eq 1 ] && docker rm mongo
+	[ $runMongo -eq 1 ] && docker rm csmongo
 }
 
 
@@ -144,18 +144,18 @@ Current configuration values:
 	SSL certificate file name:       $SSL_CERT_FILE
 	SSL key file name:               $SSL_KEY_FILE
 	SSL CA bundle file name:         $SSL_CA_FILE
-	Auth secret:                     $SECRET_AUTH
-	Cookie secret:                   $SECRET_COOKIE
-	Confirmation secret:             $SECRET_CONFIRMATION_CHEAT
-	Subscription secret:             $SECRET_SUBSCRIPTION_CHEAT
-	Mail secret:                     $SECRET_MAIL
-	Telemetry secret:                $SECRET_TELEMETRY
-	Broadcast API secret:            $SECRET_BROADCAST_API
-	Broadcast auth secret:           $SECRET_BROADCAST_AUTH
 	Email sender address:            $SENDER_EMAIL
 	Support email address:           $SUPPORT_EMAIL
 
 "
+	# Auth secret:                     $SECRET_AUTH
+	# Cookie secret:                   $SECRET_COOKIE
+	# Confirmation secret:             $SECRET_CONFIRMATION_CHEAT
+	# Subscription secret:             $SECRET_SUBSCRIPTION_CHEAT
+	# Mail secret:                     $SECRET_MAIL
+	# Telemetry secret:                $SECRET_TELEMETRY
+	# Broadcast API secret:            $SECRET_BROADCAST_API
+	# Broadcast auth secret:           $SECRET_BROADCAST_AUTH
 }
 
 function edit_config_vars {
@@ -196,15 +196,15 @@ function create_config_from_template {
 	| sed -e "s/{{SSL_CA_FILE}}/$SSL_CA_FILE/g" \
 	| sed -e "s/{{SENDER_EMAIL}}/$SENDER_EMAIL/g" \
 	| sed -e "s/{{SUPPORT_EMAIL}}/$SUPPORT_EMAIL/g" \
+	| sed -e "s/{{SECRET_AUTH}}/$SECRET_AUTH/g" \
+	| sed -e "s/{{SECRET_COOKIE}}/$SECRET_COOKIE/g" \
+	| sed -e "s/{{SECRET_CONFIRMATION_CHEAT}}/$SECRET_CONFIRMATION_CHEAT/g" \
+	| sed -e "s/{{SECRET_SUBSCRIPTION_CHEAT}}/$SECRET_SUBSCRIPTION_CHEAT/g" \
+	| sed -e "s/{{SECRET_MAIL}}/$SECRET_MAIL/g" \
+	| sed -e "s/{{SECRET_TELEMETRY}}/$SECRET_TELEMETRY/g" \
+	| sed -e "s/{{SECRET_BROADCAST_API}}/$SECRET_BROADCAST_API/g" \
+	| sed -e "s/{{SECRET_BROADCAST_AUTH}}/$SECRET_BROADCAST_AUTH/g" \
 	> $cfg_file
-	#	| sed -e "s/{{SECRET_AUTH}}/$SECRET_AUTH/g" \
-	#	| sed -e "s/{{SECRET_COOKIE}}/$SECRET_COOKIE/g" \
-	#	| sed -e "s/{{SECRET_CONFIRMATION_CHEAT}}/$SECRET_CONFIRMATION_CHEAT/g" \
-	#	| sed -e "s/{{SECRET_SUBSCRIPTION_CHEAT}}/$SECRET_SUBSCRIPTION_CHEAT/g" \
-	#	| sed -e "s/{{SECRET_MAIL}}/$SECRET_MAIL/g" \
-	#	| sed -e "s/{{SECRET_TELEMETRY}}/$SECRET_TELEMETRY/g" \
-	#	| sed -e "s/{{SECRET_BROADCAST_API}}/$SECRET_BROADCAST_API/g" \
-	#	| sed -e "s/{{SECRET_BROADCAST_AUTH}}/$SECRET_BROADCAST_AUTH/g" \
 }
 
 

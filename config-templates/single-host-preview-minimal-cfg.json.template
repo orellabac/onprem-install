@@ -15,11 +15,11 @@
 		"confirmationExpiration": 86400000,
 		"confirmCodeExpiration": 604800000,
 		"signupTokenExpiration": 600000,
+		"environment": "onprem",
 		"assetEnvironment": "onprem",
 		"publicApiUrl": "https://{{FQHN}}",
 		"authOrigin": "",
-		"environment": "onprem",
-		"callbackEnvironment": "",
+		"callbackEnvironment": "onprem",
 		"dontWantAWS": true
 	},
 	"webAppServer": {
