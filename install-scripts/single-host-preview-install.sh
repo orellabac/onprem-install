@@ -1,10 +1,12 @@
 #!/bin/bash
 
 function usage {
-	echo "usage: $0 [-c] -a <action>"
+	echo "usage: $0 [-M] -a <action>"
+	# echo "usage: $0 [-c] -a <action>"
 	echo
-	echo "    -a   run | start | stop | reset | install"
-	echo "    -c   run containers using docker-compose (default controls containers indivudally)"
+	echo "    -a   install | run | start | stop | reset"
+	echo "    -M   do NOT launch mongo container - use client supplied mongo service"
+	# echo "    -c   run containers using docker-compose (default controls containers indivudally)"
 	exit 1
 }
 
@@ -22,15 +24,21 @@ do
 	esac
 done
 shift `expr $OPTIND - 1`
-[ -z `echo $action | egrep -e '^(run|start|stop|reset|install)$'` ] && echo "bad action" && usage
+[ -z `echo $action | egrep -e '^(install|run|start|stop|reset)$'` ] && echo "bad action" && usage
+
+mongoDockerVersion=3.4.9
+rabbitDockerVersion=0.0.0
+broadcasterDockerVersion=0.0.1
+apiDockerVersion=0.0.1
+mailoutDockerVersion=0.0.1
 
 function check_env {
 	local rc=0
 	[ -z "$HOME" ] && echo "\$HOME is not defined" >&2 && rc=1
 	[ -z `which docker 2>/dev/null` ] && echo "'docker' command not found in search path" >&2 && rc=1
-	[ -z `which docker-compose 2>/dev/null` ] && echo "'docker-compose' command not found in search path" >&2 && rc=1
+	# [ -z `which docker-compose 2>/dev/null` ] && echo "'docker-compose' command not found in search path" >&2 && rc=1
 	[ -z `which curl 2>/dev/null` ] && echo "'curl' command not found in search path" >&2 && rc=1
-	[ -z `which tr 2>/dev/null` ] && echo "'tr' command not found in search path" >&2 && rc=1
+	[ -z `which $TR_CMD 2>/dev/null` ] && echo "'$TR_CMD' command not found in search path" >&2 && rc=1
 	echo $rc
 }
 
@@ -56,22 +64,22 @@ function random_string {
 function run_containers {
 	if [ $runMongo -eq 1 ]; then
 		echo "running mongo..."
-		docker run -d -P --network="host" --name csmongo --mount 'type=volume,source=csmongodata,target=/data' mongo:3.4.9
+		docker run -d -P --network="host" --name csmongo --mount 'type=volume,source=csmongodata,target=/data' mongo:$mongoDockerVersion
 		sleep 5
 	fi
 	echo "running rabbitMQ..."
-	docker run -d -P --network="host" --name csrabbitmq teamcodestream/rabbitmq-onprem:0.0.0
+	docker run -d -P --network="host" --name csrabbitmq teamcodestream/rabbitmq-onprem:$rabbitDockerVersion
 	sleep 5
-	#echo -n "Press ENTER..."; read
+	# echo -n "Press ENTER..."; read
 	echo "running broadcaster..."
-	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csbcast teamcodestream/broadcaster-onprem:0.0.0
+	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csbcast teamcodestream/broadcaster-onprem:$broadcasterDockerVersion
 	sleep 3
-	#echo -n "Press ENTER..."; read
+	# echo -n "Press ENTER..."; read
 	echo "running api..."
-	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csapi teamcodestream/api-onprem:0.0.0
-	#echo -n "Press ENTER..."; read
+	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csapi teamcodestream/api-onprem:$apiDockerVersion
+	# echo -n "Press ENTER..."; read
 	echo "running outbound mail service..."
-	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csmailout teamcodestream/mailout-onprem:0.0.0
+	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csmailout teamcodestream/mailout-onprem:$mailoutDockerVersion
 }
 
 function start_containers {
