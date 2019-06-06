@@ -23,7 +23,7 @@
 		"dontWantAWS": true
 	},
 	"webAppServer": {
-		"host": "https://op1-app.codestream.us",
+		"host": "",
 		"marketingHost": ""
 	},
 	"apiServerLogging": {

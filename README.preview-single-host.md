@@ -1,9 +1,9 @@
 
 # CodeStream OnPrem - Single Host Preview
 
-The single host preview of CodeStream OnPrem uses docker containers for all of
-the CodeStream services. They run in a docker **host** network all on a single
-host; each service will be accessible independently.
+The single host preview of CodeStream OnPrem uses one docker container for each
+of the CodeStream services (there is no scaling or redundancy). All containers must run on a single docker **host**. The host must run Linux. Docker containers
+will run as a docker **host** network type.
 
 This has been tested on Amazon Linux AMI (RedHat, CentOS, Fedora, ...).
 
@@ -119,6 +119,13 @@ requests. We provide an example of this using **nginx**.
       add the URL **https://my-codestream-proxy.my-company.com/no-auth/provider-token/slack**
       and press the "Save URLs" button.
     - On the **Basic Information** page, install the App into your workspace.
+    - The app is now available to the workspace you created it in. If you want
+      to be able to select from any of your workspaces for authentication, you
+      need to distribute your app (this does not submit it to the slack
+      marketplace). On the left rail, under settings, select **Manage
+      Distribution**. On the middle of that page press the "Activate
+      Distribution" button (you may need to check off a few items on the
+      checklist below to make that button available).
 
 - Update your CodeStream configuration file.
     - Copy the *Client ID* from the **Basic Information** page and add it to your CodeStream

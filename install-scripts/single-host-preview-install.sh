@@ -4,13 +4,15 @@ function usage {
 	echo "usage: $0 --help"
 	echo "       $0 [-M] -a { install | start | stop | reset | status }"
 	echo "       $0 -L {last-N-minutes-or-hours-spec}"
+	echo "       $0 --update"
 	# echo "usage: $0 [-c] -a <action>"
 	# echo "    -c   run containers using docker-compose (default controls containers indivudally)
 	if [ -n "$1" ]; then
 		echo
 		echo "  Initialize CodeStream, start & stop the services"
 		echo "    -a   install | start | stop | reset | status"
-		echo "    -M   do NOT launch mongo container - use client supplied mongo service"
+		echo "    -M   do NOT control mongo container - use client supplied mongo service"
+		echo "         set 'CS_MONGO_CONTAINER=ignore' to default the -M switch"
 		echo
 		echo "  Capture logs"
 		echo "    -L   Nm | Nh, where N represents number of most recent minutes or hours to capture"
@@ -18,32 +20,6 @@ function usage {
 	fi
 	exit 1
 }
-
-[ "$1" == "--help" ] && usage help
-[ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
-runMode=individual
-action=""
-[ "$CS_MONGO_CONTAINER" == "no" ] && runMongo=0 && echo "Mongo container will not be touched (CS_MONGO_CONTAINER)" || runMongo=1
-logCapture=""
-# while getopts "ca:ML:" arg
-while getopts "a:ML:" arg
-do
-	case $arg in
-		L) logCapture=$OPTARG; action=sendLogs;;
-		c) runMode=dockerCompose;;
-		M) runMongo=0;;
-		a) action=$OPTARG;;
-		*) usage;;
-	esac
-done
-shift `expr $OPTIND - 1`
-[ -z "`echo $action | egrep -e '^(install|start|stop|reset|status|sendLogs)$'`" ] && echo "bad action" && usage
-
-mongoDockerVersion=3.4.9
-rabbitDockerVersion=0.0.0
-broadcasterDockerVersion=0.0.1
-apiDockerVersion=0.0.1
-mailoutDockerVersion=0.0.1
 
 function check_env {
 	local rc=0
@@ -53,6 +29,15 @@ function check_env {
 	[ -z `which curl 2>/dev/null` ] && echo "'curl' command not found in search path" >&2 && rc=1
 	[ -z `which $TR_CMD 2>/dev/null` ] && echo "'$TR_CMD' command not found in search path" >&2 && rc=1
 	echo $rc
+}
+
+function update_container_versions {
+	curl -s --fail --output ~/.codestream/container-versions.new "$versionUrl"
+	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl)" && return 1
+	x=`diff ~/.codestream/container-versions.new ~/.codestream/container-versions|wc -l`
+	[ "$x" -eq 0 ] && echo "You are at the latest version" && /bin/rm -f ~/.codestream/container-versions.new && return 0
+	/bin/mv -f ~/.codestream/container-versions.new ~/.codestream/container-versions
+	return $?
 }
 
 function yesno {
@@ -133,7 +118,7 @@ function remove_containers {
 }
 
 function docker_status {
-	docker ps -a|egrep '[[:blank:]]cs|NAME'
+	docker ps -a|egrep -e '[[:blank:]]cs|NAME'
 	echo
 	docker volume ls -f name=csmongodata
 }
@@ -313,7 +298,38 @@ the SMTP settings in the config file before you start the docker services.
 "
 }
 
+
 [ $(check_env) -eq 1 ] && exit 1
+[ "$1" == "--help" ] && usage help
+[ "$1" == "--update" ] && update_container_versions && exit $?
+[ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
+runMode=individual
+action=""
+[ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 && echo "Mongo container will not be touched (CS_MONGO_CONTAINER=ignore)" || runMongo=1
+logCapture=""
+versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
+
+# while getopts "ca:ML:" arg
+while getopts "a:ML:" arg
+do
+	case $arg in
+		L) logCapture=$OPTARG; action=sendLogs;;
+		c) runMode=dockerCompose;;
+		M) runMongo=0;;
+		a) action=$OPTARG;;
+		*) usage;;
+	esac
+done
+shift `expr $OPTIND - 1`
+[ -z "`echo $action | egrep -e '^(install|start|stop|reset|status|sendLogs)$'`" ] && echo "bad action" && usage
+
+
+if [ ! -f ~/.codestream/container-versions ]; then
+	curl -s --fail --output ~/.codestream/container-versions "$versionUrl"
+	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl)" && exit 1
+fi
+[ ! -f ~/.codestream/container-versions ] && echo "~/.codestream/container-versions not found" && exit 1
+. ~/.codestream/container-versions || exit 1
 
 case $action in
 	sendLogs)
