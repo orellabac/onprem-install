@@ -31,15 +31,17 @@ the container services.
 1. In a new terminal window, login to the docker host as the user which will run
 the docker commands and get the CodeStream OnPrem installation script
     ```
-    $ curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o ~/single-host-preview-install.sh
-    $ chmod +x ~/single-host-preview-install.sh
+    $ mkdir ~/.codestream
+    $ cd ~/.codestream
+    $ curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o single-host-preview-install.sh
+    $ chmod +x single-host-preview-install.sh
     ```
 
 1. Run the script to create a base configuration. Once this step is complete, you
 will have a configuration file, *~/.codestream/codestream-services-config.json*,
 which you will be editing in subsequent steps.
     ```
-    $ ~/single-host-preview-install.sh -a install
+    $ ./single-host-preview-install.sh -a install
     ```
 
 1. Update the *emailDeliveryService.NodeMailer* section of the config file to
@@ -127,25 +129,25 @@ requests. We provide an example of this using **nginx**.
     - Set the `apiServer.authOrigin` property to **"https://my-codestream-proxy.my-company.com/no-auth"**
 
 
-## Starting and Stopping CodeStream
+## Starting and Stopping CodeStream Services
 
-### Start the services for the first time
+### Start the services
 ```
-$ single-host-preview-install.sh -a run
+$ ~/.codestream/single-host-preview-install.sh -a start
 ```
 
 ### Stop the services
 ```
-$ single-host-preview-install.sh -a stop
-```
-
-### Restart the services
-```
-$ single-host-preview-install.sh -a start
+$ ~/.codestream/single-host-preview-install.sh -a stop
 ```
 
 ### Stop the services and remove all the containers
 (this will leave the mongo data volume intact)
 ```
-$ single-host-preview-install.sh -a reset
+$ ~/.codestream/single-host-preview-install.sh -a reset
+```
+
+### See your containers and mongo data volume
+```
+$ ~/.codestream/single-host-preview-install.sh -a status
 ```

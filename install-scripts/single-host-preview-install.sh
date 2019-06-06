@@ -1,22 +1,35 @@
 #!/bin/bash
 
 function usage {
-	echo "usage: $0 [-M] -a <action>"
+	echo "usage: $0 --help"
+	echo "       $0 [-M] -a { install | start | stop | reset | status }"
+	echo "       $0 -L {last-N-minutes-or-hours-spec}"
 	# echo "usage: $0 [-c] -a <action>"
-	echo
-	echo "    -a   install | run | start | stop | reset"
-	echo "    -M   do NOT launch mongo container - use client supplied mongo service"
-	# echo "    -c   run containers using docker-compose (default controls containers indivudally)"
+	# echo "    -c   run containers using docker-compose (default controls containers indivudally)
+	if [ -n "$1" ]; then
+		echo
+		echo "  Initialize CodeStream, start & stop the services"
+		echo "    -a   install | start | stop | reset | status"
+		echo "    -M   do NOT launch mongo container - use client supplied mongo service"
+		echo
+		echo "  Capture logs"
+		echo "    -L   Nm | Nh, where N represents number of most recent minutes or hours to capture"
+		echo "         eg. 1h - last hour of logs, 30m - last 30 minutes of logs"
+	fi
 	exit 1
 }
 
+[ "$1" == "--help" ] && usage help
 [ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
 runMode=individual
 action=""
-runMongo=1
-while getopts "ca:M" arg
+[ "$CS_MONGO_CONTAINER" == "no" ] && runMongo=0 && echo "Mongo container will not be touched (CS_MONGO_CONTAINER)" || runMongo=1
+logCapture=""
+# while getopts "ca:ML:" arg
+while getopts "a:ML:" arg
 do
 	case $arg in
+		L) logCapture=$OPTARG; action=sendLogs;;
 		c) runMode=dockerCompose;;
 		M) runMongo=0;;
 		a) action=$OPTARG;;
@@ -24,7 +37,7 @@ do
 	esac
 done
 shift `expr $OPTIND - 1`
-[ -z `echo $action | egrep -e '^(install|run|start|stop|reset)$'` ] && echo "bad action" && usage
+[ -z "`echo $action | egrep -e '^(install|start|stop|reset|status|sendLogs)$'`" ] && echo "bad action" && usage
 
 mongoDockerVersion=3.4.9
 rabbitDockerVersion=0.0.0
@@ -61,53 +74,69 @@ function random_string {
 	head /dev/urandom | $TR_CMD -dc A-Za-z0-9 | head -c $strLen ; echo ''
 }
 
-function run_containers {
-	if [ $runMongo -eq 1 ]; then
-		echo "running mongo..."
-		docker run -d -P --network="host" --name csmongo --mount 'type=volume,source=csmongodata,target=/data' mongo:$mongoDockerVersion
-		sleep 5
+function container_state {
+	local container=$1
+	docker inspect --format='{{.State.Status}}' $container  2>/dev/null|grep -v '^[[:blank:]]*$'
+}
+
+function run_or_start_container {
+	local container=$1
+	local state=$(container_state $container)
+	[ "$state" == "running" ] && echo "Container $container is already running" >&2 && return
+	if [ "$state" == "exited" ]; then
+		echo "docker start $container"
+		docker start $container
+		return
 	fi
-	echo "running rabbitMQ..."
-	docker run -d -P --network="host" --name csrabbitmq teamcodestream/rabbitmq-onprem:$rabbitDockerVersion
-	sleep 5
-	# echo -n "Press ENTER..."; read
-	echo "running broadcaster..."
-	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csbcast teamcodestream/broadcaster-onprem:$broadcasterDockerVersion
-	sleep 3
-	# echo -n "Press ENTER..."; read
-	echo "running api..."
-	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csapi teamcodestream/api-onprem:$apiDockerVersion
-	# echo -n "Press ENTER..."; read
-	echo "running outbound mail service..."
-	docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csmailout teamcodestream/mailout-onprem:$mailoutDockerVersion
+	[ -n "$state" ] && echo "Container $container is in an unknown state ($state). Aborting" >&2 && return
+	echo "running container $container (docker run)"
+	case $container in
+	csmongo)
+		docker run -d -P --network="host" --name csmongo --mount 'type=volume,source=csmongodata,target=/data' mongo:$mongoDockerVersion;;
+	csrabbitmq)
+		docker run -d -P --network="host" --name csrabbitmq teamcodestream/rabbitmq-onprem:$rabbitDockerVersion;;
+	csbcast)
+		docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csbcast teamcodestream/broadcaster-onprem:$broadcasterDockerVersion;;
+	csapi)
+		docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csapi teamcodestream/api-onprem:$apiDockerVersion;;
+	csmailout)
+		docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csmailout teamcodestream/mailout-onprem:$mailoutDockerVersion;;
+	*)
+		echo "don't know how to start container $container" >&2
+		return;;
+	esac
 }
 
 function start_containers {
 	if [ $runMongo -eq 1 ]; then
-		echo "starting mongo...."
-		docker start csmongo
+		run_or_start_container csmongo
 		sleep 5
 	fi
-	echo "starting rabbitMQ..."
-	docker start csrabbitmq
+	run_or_start_container csrabbitmq
 	sleep 7
-	echo "starting broadcaster..."
-	docker start csbcast
+	run_or_start_container csbcast
 	sleep 3
-	echo "starting api and outbound mail service..."
-	docker start csapi csmailout
+	run_or_start_container csapi
+	run_or_start_container csmailout
 }
 
 function stop_containers {
+	echo docker stop csapi csmailout csbcast csrabbitmq
 	docker stop csapi csmailout csbcast csrabbitmq
-	[ $runMongo -eq 1 ] && docker stop csmongo
+	[ $runMongo -eq 1 ] && echo "docker stop csmongo" && docker stop csmongo
 }
 
 function remove_containers {
+	echo docker rm csapi csmailout csbcast csrabbitmq
 	docker rm csapi csmailout csbcast csrabbitmq
-	[ $runMongo -eq 1 ] && docker rm csmongo
+	[ $runMongo -eq 1 ] && echo "docker rm csmongo" && docker rm csmongo
 }
 
+function docker_status {
+	docker ps -a|egrep '[[:blank:]]cs|NAME'
+	echo
+	docker volume ls -f name=csmongodata
+}
 
 function load_config_cache {
 	[ -f ~/.codestream/config-cache ] && . ~/.codestream/config-cache
@@ -215,34 +244,22 @@ function create_config_from_template {
 	> $cfg_file
 }
 
+function capture_logs {
+	local since=$1
+	local logdir=cslogs$$
+	local now=`date +%Y%m%d-%H%M%S`
+	tmpDir=$HOME/$logdir
+	mkdir $tmpDir
+	docker logs --since $since csapi >$tmpDir/api.log 2>&1
+	docker logs --since $since csbcast >$tmpDir/broadcaster.log 2>&1
+	docker logs --since $since csrabbitmq >$tmpDir/rabbitmq.log 2>&1
+	docker logs --since $since csmailout >$tmpDir/mailout.log 2>&1
+	tar czpf $HOME/codestream-onprem-logs.$now.tgz -C $HOME $logdir
+	[ -d "$tmpDir" ] && /bin/rm -rf $tmpDir
+	ls -l $HOME/codestream-onprem-logs.$now.tgz
+}
 
-[ $(check_env) -eq 1 ] && exit 1
-
-if [ $action == "reset" ]; then
-	echo "Stopping and removing codestream containers..."
-	stop_containers
-	remove_containers
-	exit 0
-fi
-
-if [ $action == "start" ]; then
-	echo "Starting codestream containers..."
-	start_containers
-	exit 0
-fi
-
-if [ $action == "stop" ]; then
-	echo "Stopping codestream containers..."
-	stop_containers
-	exit 0
-fi
-
-if [ $action == "run"  -a  $runMode == "individual" ]; then
-	run_containers
-	exit 0
-fi
-
-if [ $action == "install" ]; then
+function install_and_configure {
 	[ -f ~/.codestream/codestream-services-config.json ] && echo "~/.codestream/codestream-services-config.json already exists!" && exit 1
 
 	echo -n "
@@ -294,4 +311,30 @@ Continue with the installation instructions. At a minimum, you will need to edit
 the SMTP settings in the config file before you start the docker services.
 
 "
-fi
+}
+
+[ $(check_env) -eq 1 ] && exit 1
+
+case $action in
+	sendLogs)
+		capture_logs $logCapture;;
+	install)
+		install_and_configure;;
+	reset)
+		echo "Stopping and removing codestream containers..."
+		stop_containers
+		remove_containers;;
+	start)
+		echo "Starting codestream containers..."
+		start_containers
+		sleep 1
+		docker_status;;
+	status)
+		docker_status;;
+	stop)
+		echo "Stopping codestream containers..."
+		stop_containers;;
+	*)
+		usage;;
+esac
+exit 0
