@@ -1,189 +1,90 @@
 {
-	"apiProtocol": {
-		"port": 443,
-		"https": {
-			"keyfile": "/opt/config/{{SSL_KEY_FILE}}",
-			"certfile": "/opt/config/{{SSL_CERT_FILE}}",
-			"cafile": "/opt/config/{{SSL_CA_FILE}}"
-		}
-	},
-	"apiServer": {
-		"confirmationNotRequired": "",
-		"sessionAwayTimeout": 600000,
-		"helpIsAvailable": "1",
-		"forgotPasswordExpiration": 86400000,
-		"confirmationExpiration": 86400000,
-		"confirmCodeExpiration": 604800000,
-		"signupTokenExpiration": 600000,
-		"environment": "onprem",
-		"assetEnvironment": "onprem",
-		"publicApiUrl": "https://{{FQHN}}",
-		"authOrigin": "",
-		"callbackEnvironment": "onprem",
-		"dontWantAWS": true
-	},
-	"webAppServer": {
-		"host": "",
-		"marketingHost": ""
-	},
-	"apiServerLogging": {
-		"directory": "/opt/api/log",
-		"consoleOk": "1",
-		"debugOk": ""
-	},
-	"inboundMailLogging": {
-		"directory": "/opt/mailin/log",
-		"consoleOk": "1"
-	},
-	"outboundMailLogging": {
-		"directory": "/opt/mailout/log",
-		"consoleOk": "1"
-	},
-	"broadcastEngine": {
-		"pubnub": {
-			"publicKey": "",
-			"subscribeKey": "",
-			"secretKey": "",
-			"ssl": true,
-			"keepAlive": true,
-			"uuid": "CodeStreamServer"
-		},
-		"codestreamBroadcaster": {
-			"port": 12443,
-			"host": "{{FQHN}}",
-			"logger": {
-				"directory": "/opt/broadcaster/log",
-				"consoleOk": true
-			},
-			"secrets": {
-				"api": "{{SECRET_BROADCAST_API}}",
-				"auth": "{{SECRET_BROADCAST_AUTH}}"
-			}
-		}
-	},
-	"queuingEngine": {
-		"rabbitmq": {
-			"host": "{{FQHN}}",
-			"port": "5672",
-			"user": "code",
-			"password": "stream"
-		},
-		"awsSQS": {
-			"region": "us-east-1",
-			"sqs": {
-				"outboundEmailQueueName": "outboundEmail"
-			}
-		}
-	},
-	"emailDeliveryService": {
-		"sendgrid": {
-			"url": "",
-			"apiKey": "",
-			"emailTo": ""
-		},
-		"NodeMailer": {
-			"service": "",
-			"host": "",
-			"port": "",
-			"username": "",
-			"password": "",
-			"emailTo": ""
-		}
-	},
-	"secrets": {
-		"auth": "{{SECRET_AUTH}}",
-		"cookie": "{{SECRET_COOKIE}}",
-		"confirmationCheat": "{{SECRET_CONFIRMATION_CHEAT}}",
-		"subscriptionCheat": "{{SECRET_SUBSCRIPTION_CHEAT}}",
-		"mail": "{{SECRET_MAIL}}",
-		"telemetry": "{{SECRET_TELEMETRY}}"
-	},
-	"integrations": {
-		"slack": {
-			"slack.com": {
-				"desc": "Slack Cloud Service",
-				"appClientId": "",
-				"appClientSecret": ""
-			}
-		},
-		"trello": {
-			"trello.com": {
-				"desc": "Trello Cloud Service",
-				"apiKey": ""
-			}
-		},
-		"asana": {
-			"asana.com": {
-				"desc": "Asana Cloud Service",
-				"appClientId": "",
-				"appClientSecret": ""
-			}
-		},
-		"bitbucket": {
-			"bitbucket.com": {
-				"desc": "BitBucket Cloud Service",
-				"appClientId": "",
-				"appClientSecret": ""
-			}
-		},
-		"gitlab": {
-			"gitlab.com": {
-				"desc": "GitLab Cloud Service",
-				"appClientId": "",
-				"appClientSecret": ""
-			}
-		},
-		"glip": {
-			"glip.com": {
-				"desc": "Glip Cloud Service",
-				"appClientId": "",
-				"appClientSecret": ""
-			}
-		},
-		"jira": {
-			"atlassian.com": {
-				"desc": "Jira Cloud Service",
-				"appClientId": "",
-				"appClientSecret": ""
-			}
-		},
-		"github": {
-			"github.com": {
-				"desc": "Github Cloud Service",
-				"appClientId": "",
-				"appClientSecret": ""
-			},
-			"git.mydomain.com": {
-				"desc": "Github Enterprise Server On-Prem",
-				"appClientId": "",
-				"appClientSecret": "",
-				"localProvider": true
-			}
-		},
-		"msteams": {
-			"microsoft.com": {
-				"desc": "MS Teams Cloud Service",
-				"appClientId": "",
-				"appClientSecret": ""
-			}
-		}
-	},
-	"segment": {
-		"token": "",
-		"webToken": ""
-	},
-	"mongo": {
-		"url": "mongodb://localhost.codestream.us:27017/codestream",
-		"database": "codestream"
-	},
-	"email": {
-		"replyToDomain": "{{FQHN}}",
-		"notificationInterval": 300000,
-		"suppressEmails": true,
-		"inboundEmailDirectory": "/opt/mailin/inbound/node/new",
-		"processDirectory": "/opt/mailin/mailq/process",
-		"tempAttachmentDirectory": "/opt/mailin/mailq/attachments",
-		"senderEmail": "{{SENDER_EMAIL}}",
-		"supportEmail": "{{SUPPORT_EMAIL}}"
-	}
+    "apiServer": {
+        "assetEnvironment": "onprem",
+        "authOrigin": "https://my-codestream-proxy.my-company.com/no-auth",
+        "callbackEnvironment": "onprem",
+        "confirmCodeExpiration": 604800000,
+        "confirmationExpiration": 86400000,
+        "confirmationNotRequired": false,
+        "dontWantAWS": true,
+        "forgotPasswordExpiration": 86400000,
+        "helpIsAvailable": false,
+        "logger": {
+            "consoleOk": true,
+            "debugOk": false,
+            "directory": "/opt/api/log"
+        },
+        "mockMode": false,
+        "port": 443,
+        "publicApiUrl": "https://{{FQHN}}",
+        "runTimeEnvironment": "onprem",
+        "sessionAwayTimeout": 600000,
+        "signupTokenExpiration": 600000
+    },
+    "broadcastEngine": {
+        "codestreamBroadcaster": {
+            "host": "{{FQDN}}",
+            "logger": {
+                "consoleOk": true,
+                "debugOk": false,
+                "directory": "/opt/broadcaster/log"
+            },
+            "port": 12443,
+            "secrets": {
+                "api": "{{SECRET_BROADCAST_API}}",
+                "auth": "{{SECRET_BROADCAST_AUTH}}"
+            }
+        }
+    },
+    "email": {
+        "emailTo": null,
+        "notificationInterval": 300000,
+        "replyToDomain": "{{FQHN}}",
+        "senderEmail": "{{SENDER_EMAIL}}",
+        "supportEmail": "{{SUPPORT_EMAIL}}",
+        "suppressEmails": true
+    },
+    "emailDeliveryService": {
+        "NodeMailer": {
+            "host": null,
+            "password": null,
+            "port": 587,
+            "service": null,
+            "username": null
+        }
+    },
+    "outboundEmailServer": {
+        "logger": {
+            "consoleOk": true,
+            "debugOk": false,
+            "directory": "/opt/mailout/log"
+        }
+    },
+    "queuingEngine": {
+        "rabbitmq": {
+            "host": "{{FQHN}}",
+            "outboundEmailQueueName": "outboundEmail",
+            "password": "stream",
+            "port": 5672,
+            "user": "code"
+        }
+    },
+    "sharedSecrets": {
+        "auth": "{{SECRET_AUTH}}",
+        "confirmationCheat": "{{SECRET_CONFIRMATION_CHEAT}}",
+        "cookie": "{{SECRET_COOKIE}}",
+        "mail": "{{SECRET_MAIL}}",
+        "subscriptionCheat": "{{SECRET_SUBSCRIPTION_CHEAT}}",
+        "telemetry": "{{SECRET_TELEMETRY}}"
+    },
+    "ssl": {
+        "cafile": "/opt/config/{{SSL_CA_FILE}}",
+        "certfile": "/opt/config/{{SSL_CERT_FILE}}",
+        "keyfile": "/opt/config/{{SSL_KEY_FILE}}"
+    },
+    "storage": {
+        "mongo": {
+            "url": "mongodb://{{FQHN}}/codestream"
+        }
+    }
 }
