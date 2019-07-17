@@ -1,5 +1,5 @@
-apiDockerImage=teamcodestream/api-onprem:0.0.2
-broadcasterDockerImage=teamcodestream/broadcaster-onprem:0.0.1
-mailoutDockerImage=teamcodestream/mailout-onprem:0.0.2
-mongoDockerImage=mongo:3.4.9
-rabbitDockerImage=teamcodestream/rabbitmq-onprem:0.0.0
+apiDockerVersion=0.0.2
+broadcasterDockerVersion=0.0.1
+mailoutDockerVersion=0.0.2
+mongoDockerVersion=3.4.9
+rabbitDockerVersion=0.0.0

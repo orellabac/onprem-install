@@ -299,10 +299,11 @@ the SMTP settings in the config file before you start the docker services.
 }
 
 
+[ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
+
 [ $(check_env) -eq 1 ] && exit 1
 [ "$1" == "--help" ] && usage help
 [ "$1" == "--update" ] && update_container_versions && exit $?
-[ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
 runMode=individual
 action=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 && echo "Mongo container will not be touched (CS_MONGO_CONTAINER=ignore)" || runMongo=1
