@@ -23,6 +23,7 @@
     },
     "broadcastEngine": {
         "codestreamBroadcaster": {
+            "assetEnvironment": "local",
             "host": "{{FQDN}}",
             "logger": {
                 "consoleOk": true,
@@ -30,6 +31,7 @@
                 "directory": "/opt/broadcaster/log"
             },
             "port": 12443,
+            "runTimeEnvironment": "local",
             "secrets": {
                 "api": "{{SECRET_BROADCAST_API}}",
                 "auth": "{{SECRET_BROADCAST_AUTH}}"
