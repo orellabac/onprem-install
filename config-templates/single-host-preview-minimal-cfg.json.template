@@ -1,92 +1,94 @@
 {
-    "apiServer": {
-        "assetEnvironment": "onprem",
-        "authOrigin": "https://my-codestream-proxy.my-company.com/no-auth",
-        "callbackEnvironment": "onprem",
-        "confirmCodeExpiration": 604800000,
-        "confirmationExpiration": 86400000,
-        "confirmationNotRequired": false,
-        "dontWantAWS": true,
-        "forgotPasswordExpiration": 86400000,
-        "helpIsAvailable": false,
-        "logger": {
-            "consoleOk": true,
-            "debugOk": false,
-            "directory": "/opt/api/log"
-        },
-        "mockMode": false,
-        "port": 443,
-        "publicApiUrl": "https://{{FQHN}}",
-        "runTimeEnvironment": "onprem",
-        "sessionAwayTimeout": 600000,
-        "signupTokenExpiration": 600000
-    },
-    "broadcastEngine": {
-        "codestreamBroadcaster": {
-            "assetEnvironment": "local",
-            "host": "{{FQDN}}",
-            "logger": {
-                "consoleOk": true,
-                "debugOk": false,
-                "directory": "/opt/broadcaster/log"
-            },
-            "port": 12443,
-            "runTimeEnvironment": "local",
-            "secrets": {
-                "api": "{{SECRET_BROADCAST_API}}",
-                "auth": "{{SECRET_BROADCAST_AUTH}}"
-            }
-        }
-    },
-    "email": {
-        "emailTo": null,
-        "notificationInterval": 300000,
-        "replyToDomain": "{{FQHN}}",
-        "senderEmail": "{{SENDER_EMAIL}}",
-        "supportEmail": "{{SUPPORT_EMAIL}}",
-        "suppressEmails": true
-    },
-    "emailDeliveryService": {
-        "NodeMailer": {
-            "host": null,
-            "password": null,
-            "port": 587,
-            "service": null,
-            "username": null
-        }
-    },
-    "outboundEmailServer": {
-        "logger": {
-            "consoleOk": true,
-            "debugOk": false,
-            "directory": "/opt/mailout/log"
-        }
-    },
-    "queuingEngine": {
-        "rabbitmq": {
-            "host": "{{FQHN}}",
-            "outboundEmailQueueName": "outboundEmail",
-            "password": "stream",
-            "port": 5672,
-            "user": "code"
-        }
-    },
-    "sharedSecrets": {
-        "auth": "{{SECRET_AUTH}}",
-        "confirmationCheat": "{{SECRET_CONFIRMATION_CHEAT}}",
-        "cookie": "{{SECRET_COOKIE}}",
-        "mail": "{{SECRET_MAIL}}",
-        "subscriptionCheat": "{{SECRET_SUBSCRIPTION_CHEAT}}",
-        "telemetry": "{{SECRET_TELEMETRY}}"
-    },
-    "ssl": {
-        "cafile": "/opt/config/{{SSL_CA_FILE}}",
-        "certfile": "/opt/config/{{SSL_CERT_FILE}}",
-        "keyfile": "/opt/config/{{SSL_KEY_FILE}}"
-    },
-    "storage": {
-        "mongo": {
-            "url": "mongodb://{{FQHN}}/codestream"
-        }
-    }
+	"apiServer": {
+		"assetEnvironment": "onprem",
+		"authOrigin": "https://my-codestream-proxy.my-company.com/no-auth",
+		"callbackEnvironment": "onprem",
+		"confirmCodeExpiration": 604800000,
+		"confirmationExpiration": 86400000,
+		"confirmationNotRequired": false,
+		"dontWantAWS": true,
+		"forgotPasswordExpiration": 86400000,
+		"helpIsAvailable": false,
+		"ignoreHttps": false,
+		"logger": {
+			"consoleOk": true,
+			"debugOk": false,
+			"directory": "/opt/api/log"
+		},
+		"mockMode": false,
+		"port": 443,
+		"publicApiUrl": "https://{{FQHN}}",
+		"runTimeEnvironment": "onprem",
+		"sessionAwayTimeout": 600000,
+		"signupTokenExpiration": 600000,
+		"tmpDirectory": "/opt/api/tmp"
+	},
+	"broadcastEngine": {
+		"codestreamBroadcaster": {
+			"assetEnvironment": "local",
+			"host": "{{FQDN}}",
+			"logger": {
+				"consoleOk": true,
+				"debugOk": false,
+				"directory": "/opt/broadcaster/log"
+			},
+			"port": 12443,
+			"runTimeEnvironment": "local",
+			"secrets": {
+				"api": "{{SECRET_BROADCAST_API}}",
+				"auth": "{{SECRET_BROADCAST_AUTH}}"
+			}
+		}
+	},
+	"email": {
+		"emailTo": null,
+		"notificationInterval": 300000,
+		"replyToDomain": "{{FQHN}}",
+		"senderEmail": "{{SENDER_EMAIL}}",
+		"supportEmail": "{{SUPPORT_EMAIL}}",
+		"suppressEmails": true
+	},
+	"emailDeliveryService": {
+		"NodeMailer": {
+			"host": null,
+			"password": null,
+			"port": 587,
+			"service": null,
+			"username": null
+		}
+	},
+	"outboundEmailServer": {
+		"logger": {
+			"consoleOk": true,
+			"debugOk": false,
+			"directory": "/opt/mailout/log"
+		}
+	},
+	"queuingEngine": {
+		"rabbitmq": {
+			"host": "{{FQHN}}",
+			"outboundEmailQueueName": "outboundEmail",
+			"password": "stream",
+			"port": 5672,
+			"user": "code"
+		}
+	},
+	"sharedSecrets": {
+		"auth": "{{SECRET_AUTH}}",
+		"confirmationCheat": "{{SECRET_CONFIRMATION_CHEAT}}",
+		"cookie": "{{SECRET_COOKIE}}",
+		"mail": "{{SECRET_MAIL}}",
+		"subscriptionCheat": "{{SECRET_SUBSCRIPTION_CHEAT}}",
+		"telemetry": "{{SECRET_TELEMETRY}}"
+	},
+	"ssl": {
+		"cafile": "/opt/config/{{SSL_CA_FILE}}",
+		"certfile": "/opt/config/{{SSL_CERT_FILE}}",
+		"keyfile": "/opt/config/{{SSL_KEY_FILE}}"
+	},
+	"storage": {
+		"mongo": {
+			"url": "mongodb://{{FQHN}}/codestream"
+		}
+	}
 }
