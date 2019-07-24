@@ -22,9 +22,22 @@ To connect CodeStream to Slack, complete the following steps.
       checklist below to make that button available).
 
 - Update your CodeStream services configuration file.
-    - Copy the *Client ID* from the **Basic Information** page and add it to your CodeStream
-      configuration file for the `integrations.slack."slack.com".appClientId`
-      property.
-    - Copy the *Client Secret* and add it to your CodeStream configuration
-      for the `integrations.slack."slack.com".appClientSecret` property.
-    - Set the `apiServer.authOrigin` property to **"https://my-codestream-proxy.my-company.com/no-auth"**
+    - Add the following section to your config file:
+      ```
+      "integrations": {
+          "slack": {
+              "slack.com": {
+                  "appClientId": "slack-app-client-id",
+                  "appClientSecet": "slack-app-client-secret",
+                  "appStrictClientId": "slack-app-client-id",
+                  "appStrictClientSecet": "slack-app-client-secret",
+              }
+          }
+      }
+      ```
+    - Get the *slack-app-client-id* from the **Basic Information** page and add
+      it to your CodeStream configuration file for both properties above.
+    - Copy the *slack-app-client-secret* and add it to your CodeStream
+      configuration for both properties above.
+    - Set the `apiServer.authOrigin` property to
+      **"https://my-codestream-proxy.my-company.com/no-auth"**

@@ -11,14 +11,18 @@ This has been tested on Amazon Linux AMI (RedHat, CentOS, Fedora, ...).
 ## Check the prerequisites
 You will need...
 1. A linux server with docker installed and running. It should have the
-`docker-compose` and `curl` commands available as well. Make sure the
-system user account you intend to use for running CodeStream is able to run
-docker commands.  The fully qualified hostname of the linux server should be
-resolvable in DNS and you'll need it for the installation.
+   `docker-compose` and `curl` commands available as well. Make sure the system
+   user account you intend to use for running CodeStream is able to run docker
+   commands.  The fully qualified hostname of the linux server should be
+   resolvable in DNS and you'll need it for the installation.
 
 1. A valid SSL wildcard certificate along with it's corresponding key and
    certificate authority bundle (3 files in all). They should all be in pem
    format.
+
+1. At this time, CodeStream OnPrem is invitation only. You will need an
+   account on [Docker Hub](https://hub.docker.com) and you will need to be
+   invited to the TeamCodeStream organization.
 
 To simplify the initial configuration, there is a **bash** script that will take
 you through the configuration process. You can also use it to control the
@@ -46,8 +50,8 @@ container services.
     ```
 
 1. Update the *emailDeliveryService.NodeMailer* section of the config file to
-work with the SMTP mailer of your choice.  If you want to send email out via
-a **GMail** or **G-Suite** account, set the following properties:
+   work with the SMTP mailer of your choice.  If you want to send email out via
+   a **GMail** or **G-Suite** account, set the following properties:
     ```
     "NodeMailer": {
         "service": "gmail",

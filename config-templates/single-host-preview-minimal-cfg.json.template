@@ -1,3 +1,10 @@
+// Profile: creates the on-prem single host preview template
+//
+// - Storage:        mongo
+// - Broadcast:      codestream broadcaster
+// - Queuing:        rabbitMQ
+// - Outbound SMTP:  NodeMailer
+
 {
 	"apiServer": {
 		"assetEnvironment": "onprem",
@@ -26,7 +33,7 @@
 	"broadcastEngine": {
 		"codestreamBroadcaster": {
 			"assetEnvironment": "local",
-			"host": "{{FQDN}}",
+			"host": "{{FQHN}}",
 			"logger": {
 				"consoleOk": true,
 				"debugOk": false,
@@ -46,7 +53,7 @@
 		"replyToDomain": "{{FQHN}}",
 		"senderEmail": "{{SENDER_EMAIL}}",
 		"supportEmail": "{{SUPPORT_EMAIL}}",
-		"suppressEmails": true
+		"suppressEmails": false
 	},
 	"emailDeliveryService": {
 		"NodeMailer": {

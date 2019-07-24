@@ -1,5 +1,5 @@
-apiDockerVersion=0.0.2
-broadcasterDockerVersion=0.0.1
-mailoutDockerVersion=0.0.2
+apiDockerVersion=0.0.5
+broadcasterDockerVersion=0.0.5
+mailoutDockerVersion=0.0.5
 mongoDockerVersion=3.4.9
 rabbitDockerVersion=0.0.0
