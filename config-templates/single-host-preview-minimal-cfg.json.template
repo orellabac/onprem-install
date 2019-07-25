@@ -60,6 +60,7 @@
 			"host": null,
 			"password": null,
 			"port": 587,
+			"secure": true,
 			"service": null,
 			"username": null
 		}
