@@ -4,7 +4,8 @@ function usage {
 	echo "usage: $0 --help"
 	echo "       $0 [-M] -a { install | start | stop | reset | status }"
 	echo "       $0 -L {last-N-minutes-or-hours-spec}"
-	echo "       $0 --update"
+	echo "       $0 --update-containers"
+	echo "       $0 --update-myself"
 	# echo "usage: $0 [-c] -a <action>"
 	# echo "    -c   run containers using docker-compose (default controls containers indivudally)
 	if [ -n "$1" ]; then
@@ -29,6 +30,14 @@ function check_env {
 	[ -z `which curl 2>/dev/null` ] && echo "'curl' command not found in search path" >&2 && rc=1
 	[ -z `which $TR_CMD 2>/dev/null` ] && echo "'$TR_CMD' command not found in search path" >&2 && rc=1
 	echo $rc
+}
+
+function update_myself {
+	(
+		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o ~/.codestream/single-host-preview-install.sh
+		chmod +x ~/.codestream/single-host-preview-install.sh
+	)
+	exit
 }
 
 function update_container_versions {
@@ -303,7 +312,8 @@ the SMTP settings in the config file before you start the docker services.
 
 [ $(check_env) -eq 1 ] && exit 1
 [ "$1" == "--help" ] && usage help
-[ "$1" == "--update" ] && update_container_versions && exit $?
+[ "$1" == "--update-containers" ] && { update_container_versions; exit $? }
+[ "$1" == "--update-myself" ] && update_myself
 runMode=individual
 action=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 && echo "Mongo container will not be touched (CS_MONGO_CONTAINER=ignore)" || runMongo=1
