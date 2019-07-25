@@ -46,6 +46,7 @@ function update_container_versions {
 	x=`diff ~/.codestream/container-versions.new ~/.codestream/container-versions|wc -l`
 	[ "$x" -eq 0 ] && echo "You are at the latest version" && /bin/rm -f ~/.codestream/container-versions.new && return 0
 	/bin/mv -f ~/.codestream/container-versions.new ~/.codestream/container-versions
+	echo "Container versions have been updated. Perform a 'reset' then a 'start' to execute."
 	return $?
 }
 
@@ -309,6 +310,7 @@ the SMTP settings in the config file before you start the docker services.
 
 
 [ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
+versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
 
 [ $(check_env) -eq 1 ] && exit 1
 [ "$1" == "--help" ] && usage help
@@ -319,7 +321,6 @@ runMode=individual
 action=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 && echo "Mongo container will not be touched (CS_MONGO_CONTAINER=ignore)" || runMongo=1
 logCapture=""
-versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
 
 # while getopts "ca:ML:" arg
 while getopts "a:ML:" arg
