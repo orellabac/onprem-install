@@ -79,6 +79,13 @@ container services.
 ---------
 ## Starting and Stopping CodeStream Services
 
+### Login to Docker Hub
+The containers are accessible only to those who've been granted access so
+you must first login to your docker hub account.
+```
+$ docker login
+```
+
 ### Start the services
 This first time you run this, it will download containers and setup a mongo
 docker volume.
