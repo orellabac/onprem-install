@@ -312,8 +312,9 @@ the SMTP settings in the config file before you start the docker services.
 
 [ $(check_env) -eq 1 ] && exit 1
 [ "$1" == "--help" ] && usage help
-[ "$1" == "--update-containers" ] && { update_container_versions; exit $? }
+[ "$1" == "--update-containers" ] && { update_container_versions; exit $?; }
 [ "$1" == "--update-myself" ] && update_myself
+
 runMode=individual
 action=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 && echo "Mongo container will not be touched (CS_MONGO_CONTAINER=ignore)" || runMongo=1
