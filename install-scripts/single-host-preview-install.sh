@@ -49,7 +49,8 @@ function update_container_versions {
 	[ "$x" -eq 0 ] && echo "You are at the latest version" && /bin/rm -f ~/.codestream/container-versions.new && return 0
 	/bin/mv -f ~/.codestream/container-versions ~/.container-versions.undo
 	/bin/mv -f ~/.codestream/container-versions.new ~/.codestream/container-versions
-	echo "Container versions have been updated. Perform a 'reset' then a 'start' to execute."
+	# echo "Container versions have been updated. Perform a 'reset' then a 'start' to execute."
+	echo "~/.codestream/container-versions updated (old one is ~/.codestream/container-versions.undo)"
 	return $?
 }
 
@@ -71,8 +72,9 @@ function backup_mongo {
 	local host=$1
 	[ ! -d ~/.codestream/backups ] && mkdir ~/.codestream/backups
 	local filename="dump_$(date '+%Y-%m-%d_%H-%M-%S').gz"
+	echo "docker run --rm mongo:$mongoDockerVersion mongodump --host $host --archive --gzip"
 	docker run --rm mongo:$mongoDockerVersion mongodump --host $host --archive --gzip | cat > ~/.codestream/backups/$filename
-	[ $? -ne 0 ] && echo "backup failed" >&2 && return 1
+	[ $? -ne 0 -o \( ! -s ~/.codestream/backups/$filename \) ] && echo "backup failed" >&2 && return 1
 	echo "Backed up $host to ~/.codestream/backups/$filename"
 	return 0
 }
@@ -372,14 +374,13 @@ logCapture=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 || runMongo=1
 [ -f ~/.codestream/config-cache ] && . ~/.codestream/config-cache
 
+load_container_versions
+
 [ $(check_env) -eq 1 ] && exit 1
 [ "$1" == "--help" -o -z "$1" ] && usage help
 [ "$1" == "--update-containers" ] && { update_containers_except_mongo; exit $?; }
 [ "$1" == "--update-myself" ] && update_myself && exit 0
 [ "$1" == "--logs" ] && capture_logs "$2" && exit 0
-
-load_container_versions
-
 [ "$1" == "--backup" ] && backup_mongo $FQHN && exit $?
 if [ "$1" == "--restore" ]; then
 	[ "$2" == latest ] && { restore_mongo $FQHN "$(/bin/ls ~/.codestream/backups/dump_*.gz | tail -1)"; exit $?; }
