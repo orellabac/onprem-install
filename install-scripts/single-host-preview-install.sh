@@ -1,11 +1,13 @@
 #!/bin/bash
 
 function usage {
-	echo "usage: $0 --help"
-	echo "       $0 [-M] -a { install | start | stop | reset | status }"
-	echo "       $0 -L {last-N-minutes-or-hours-spec}"
-	echo "       $0 --update-containers"
-	echo "       $0 --update-myself"
+	echo "usage: `basename $0` --help"
+	echo "       `basename $0` [-M] -a { install | start | stop | reset | status }"
+	echo "       `basename $0` --logs {Nh | Nm}             # collect last N hours or minutes of logs"
+	echo "       `basename $0` --update-containers          # grab latest container versions (performs backup)"
+	echo "       `basename $0` --update-myself              # update the single-host-preview-install.sh script"
+	echo "       `basename $0` --backup                     # backup mongo database"
+	echo "       `basename $0` --restore {latest | <file>}  # restore mongo database from latest backup or <file>"
 	# echo "usage: $0 [-c] -a <action>"
 	# echo "    -c   run containers using docker-compose (default controls containers indivudally)
 	if [ -n "$1" ]; then
@@ -14,10 +16,6 @@ function usage {
 		echo "    -a   install | start | stop | reset | status"
 		echo "    -M   do NOT control mongo container - use client supplied mongo service"
 		echo "         set 'CS_MONGO_CONTAINER=ignore' to default the -M switch"
-		echo
-		echo "  Capture logs"
-		echo "    -L   Nm | Nh, where N represents number of most recent minutes or hours to capture"
-		echo "         eg. 1h - last hour of logs, 30m - last 30 minutes of logs"
 	fi
 	exit 1
 }
@@ -43,11 +41,60 @@ function update_myself {
 function update_container_versions {
 	curl -s --fail --output ~/.codestream/container-versions.new "$versionUrl"
 	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl)" && return 1
+	if [ ! -f ~/.codestream/container-versions ]; then
+		/bin/mv ~/.codestream/container-versions.new ~/.codestream/container-versions
+		return $?
+	fi
 	x=`diff ~/.codestream/container-versions.new ~/.codestream/container-versions|wc -l`
 	[ "$x" -eq 0 ] && echo "You are at the latest version" && /bin/rm -f ~/.codestream/container-versions.new && return 0
+	/bin/mv -f ~/.codestream/container-versions ~/.container-versions.undo
 	/bin/mv -f ~/.codestream/container-versions.new ~/.codestream/container-versions
 	echo "Container versions have been updated. Perform a 'reset' then a 'start' to execute."
 	return $?
+}
+
+function update_containers_except_mongo {
+	stop_containers 0
+	backup_mongo || exit 1
+	update_container_versions
+	remove_containers 0
+	load_container_versions
+	start_containers 0
+}
+
+function load_container_versions {
+	[ ! -f ~/.codestream/container-versions ] && { update_container_versions || exit 1; }
+	. ~/.codestream/container-versions || exit 1
+}
+
+function backup_mongo {
+	local host=$1
+	[ ! -d ~/.codestream/backups ] && mkdir ~/.codestream/backups
+	local filename="dump_$(date '+%Y-%m-%d_%H-%M-%S').gz"
+	docker run --rm mongo:$mongoDockerVersion mongodump --host $host --archive --gzip | cat > ~/.codestream/backups/$filename
+	[ $? -ne 0 ] && echo "backup failed" >&2 && return 1
+	echo "Backed up $host to ~/.codestream/backups/$filename"
+	return 0
+}
+
+function restore_mongo {
+	local host=$1 file=$2 prompt=$3
+	[ -z "$file" ] && echo "usage: restore_mongo(host file)" >&2 && return 1
+	[ ! -f "$file" ] && echo "$file not found" >&2 && return 1
+	echo "Restoring data from $file"
+	echo -e "
+  ***  WARNING   WARNING   WARNING  ***
+
+  This will overwrite the data currently in mongo and replace it with the
+  data from the backup file. The data currently in mongo will be lost!!
+"
+	if [ "$prompt" != no ]; then
+		yesno "Do you want to proceed (y/N)? "
+		[ $? -eq 0 ] && echo "never mind" && return 1
+	fi
+	cat $file | docker run --rm -i mongo:$mongoDockerVersion mongorestore --host $host --archive --gzip --drop
+	[ $? -ne 0 ] && echo "error restoring data!!" >&2 && return 1
+	return 0
 }
 
 function yesno {
@@ -103,7 +150,9 @@ function run_or_start_container {
 }
 
 function start_containers {
-	if [ $runMongo -eq 1 ]; then
+	local runMongoFlag=$1
+	[ -z "$runMongoFlag" ] && runMongoFlag=$runMongo
+	if [ $runMongoFlag -eq 1 ]; then
 		run_or_start_container csmongo
 		sleep 5
 	fi
@@ -116,15 +165,19 @@ function start_containers {
 }
 
 function stop_containers {
+	local runMongoFlag=$1
+	[ -z "$runMongoFlag" ] && runMongoFlag=$runMongo
 	echo docker stop csapi csmailout csbcast csrabbitmq
 	docker stop csapi csmailout csbcast csrabbitmq
-	[ $runMongo -eq 1 ] && echo "docker stop csmongo" && docker stop csmongo
+	[ $runMongoFlag -eq 1 ] && echo "docker stop csmongo" && docker stop csmongo
 }
 
 function remove_containers {
+	local runMongoFlag=$1
+	[ -z "$runMongoFlag" ] && runMongoFlag=$runMongo
 	echo docker rm csapi csmailout csbcast csrabbitmq
 	docker rm csapi csmailout csbcast csrabbitmq
-	[ $runMongo -eq 1 ] && echo "docker rm csmongo" && docker rm csmongo
+	[ $runMongoFlag -eq 1 ] && echo "docker rm csmongo" && docker rm csmongo
 }
 
 function docker_status {
@@ -241,6 +294,8 @@ function create_config_from_template {
 
 function capture_logs {
 	local since=$1
+	[ -z "$since" ] && echo "bad usage: missing hours or minutes spec" && exit 1
+	[ ! -d ~/.codestream/log-capture ] && mkdir ~/.codestream/log-capture
 	local logdir=cslogs$$
 	local now=`date +%Y%m%d-%H%M%S`
 	tmpDir=$HOME/$logdir
@@ -249,9 +304,9 @@ function capture_logs {
 	docker logs --since $since csbcast >$tmpDir/broadcaster.log 2>&1
 	docker logs --since $since csrabbitmq >$tmpDir/rabbitmq.log 2>&1
 	docker logs --since $since csmailout >$tmpDir/mailout.log 2>&1
-	tar czpf $HOME/codestream-onprem-logs.$now.tgz -C $HOME $logdir
+	tar -czpf ~/.codestream/log-capture/codestream-onprem-logs.$now.tgz -C $HOME $logdir
 	[ -d "$tmpDir" ] && /bin/rm -rf $tmpDir
-	ls -l $HOME/codestream-onprem-logs.$now.tgz
+	ls -l ~/.codestream/log-capture/codestream-onprem-logs.$now.tgz
 }
 
 function install_and_configure {
@@ -310,23 +365,33 @@ the SMTP settings in the config file before you start the docker services.
 
 
 [ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
-versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
-
-[ $(check_env) -eq 1 ] && exit 1
-[ "$1" == "--help" ] && usage help
-[ "$1" == "--update-containers" ] && { update_container_versions; exit $?; }
-[ "$1" == "--update-myself" ] && update_myself
-
 runMode=individual
 action=""
-[ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 && echo "Mongo container will not be touched (CS_MONGO_CONTAINER=ignore)" || runMongo=1
+versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
 logCapture=""
+[ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 || runMongo=1
+[ -f ~/.codestream/config-cache ] && . ~/.codestream/config-cache
+
+[ $(check_env) -eq 1 ] && exit 1
+[ "$1" == "--help" -o -z "$1" ] && usage help
+[ "$1" == "--update-containers" ] && { update_containers_except_mongo; exit $?; }
+[ "$1" == "--update-myself" ] && update_myself && exit 0
+[ "$1" == "--logs" ] && capture_logs "$2" && exit 0
+
+load_container_versions
+
+[ "$1" == "--backup" ] && backup_mongo $FQHN && exit $?
+if [ "$1" == "--restore" ]; then
+	[ "$2" == latest ] && { restore_mongo $FQHN "$(/bin/ls ~/.codestream/backups/dump_*.gz | tail -1)"; exit $?; }
+	restore_mongo $FQHN $2
+	exit $?
+fi
 
 # while getopts "ca:ML:" arg
 while getopts "a:ML:" arg
 do
 	case $arg in
-		L) logCapture=$OPTARG; action=sendLogs;;
+		L) capture_logs $OPTARG; exit 0;;
 		c) runMode=dockerCompose;;
 		M) runMongo=0;;
 		a) action=$OPTARG;;
@@ -334,22 +399,15 @@ do
 	esac
 done
 shift `expr $OPTIND - 1`
-[ -z "`echo $action | egrep -e '^(install|start|stop|reset|status|sendLogs)$'`" ] && echo "bad action" && usage
+[ -z "`echo $action | egrep -e '^(install|start|stop|reset|status)$'`" ] && echo "bad action" && usage
 
 
-if [ ! -f ~/.codestream/container-versions ]; then
-	curl -s --fail --output ~/.codestream/container-versions "$versionUrl"
-	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl)" && exit 1
-fi
-[ ! -f ~/.codestream/container-versions ] && echo "~/.codestream/container-versions not found" && exit 1
-. ~/.codestream/container-versions || exit 1
+[ $runMongo -eq 0 ] && echo "Mongo container will not be touched (CS_MONGO_CONTAINER=ignore)"
 
 case $action in
-	sendLogs)
-		capture_logs $logCapture;;
 	install)
 		install_and_configure;;
-	reset)
+	start_containers)
 		echo "Stopping and removing codestream containers..."
 		stop_containers
 		remove_containers;;
