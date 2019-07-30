@@ -1,14 +1,18 @@
 # 3rd Party Integrations
 
 ## OAuth Callback Web Proxy Configuration
-CodeStream supports integrations with 3rd party services, both in the cloud and self-hosted. For the OAuth authentication process to work, these 3rd party services must be able to make an https callback directly to the CodeStream API.
+CodeStream supports integrations with 3rd party services, both in the cloud and
+self-hosted. For the OAuth authentication process to work, these 3rd party
+services must be able to make an https callback directly to the CodeStream API.
 
-If your On-Prem service is sitting behind a firewall (highly recommended), you will need to provide a public facing web proxy for this express purpose.
+If your On-Prem service is sitting behind a firewall (highly recommended), you
+will need to provide a public facing web proxy for this express purpose.
 
 Following is an example configuration for an Nginx proxy.
 
 Ensure your server's virtual hostname (eg.
-**codestream-auth-proxy.my-company.com**) is publicly resolvable and reachable.  
+**codestream-auth-proxy.my-company.com**) is publicly resolvable and reachable.
+
 
 Here is a sample config to use as a guide:
   ```

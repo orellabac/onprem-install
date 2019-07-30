@@ -31,6 +31,12 @@ container services.
 ----
 ## Install the config script and create the configuration file
 
+1. The containers are accessible only to those who've been granted access on
+   docker hub so you must first login to your docker hub account.
+    ```
+    $ docker login
+    ```
+
 1. In a new terminal window, login to the docker host as the user which will run
    the docker commands and put the **CodeStream OnPrem** installation script in
    the installation directory (~/.codestream/).
@@ -78,13 +84,6 @@ container services.
 
 ---------
 ## Starting and Stopping CodeStream Services
-
-### Login to Docker Hub
-The containers are accessible only to those who've been granted access so
-you must first login to your docker hub account.
-```
-$ docker login
-```
 
 ### Start the services
 This first time you run this, it will download containers and setup a mongo
