@@ -4,6 +4,7 @@
 // - Broadcast:      codestream broadcaster
 // - Queuing:        rabbitMQ
 // - Outbound SMTP:  NodeMailer
+// - Telemetry:      Segment (CodeStream)
 
 {
 	"apiServer": {
@@ -27,6 +28,7 @@
 		"publicApiUrl": "https://{{FQHN}}",
 		"runTimeEnvironment": "onprem",
 		"sessionAwayTimeout": 600000,
+		"showConfig": false,
 		"signupTokenExpiration": 600000,
 		"tmpDirectory": "/opt/api/tmp"
 	},
@@ -44,7 +46,8 @@
 			"secrets": {
 				"api": "{{SECRET_BROADCAST_API}}",
 				"auth": "{{SECRET_BROADCAST_AUTH}}"
-			}
+			},
+			"showConfig": false
 		}
 	},
 	"email": {
@@ -97,6 +100,12 @@
 	"storage": {
 		"mongo": {
 			"url": "mongodb://{{FQHN}}/codestream"
+		}
+	},
+	"telemetry": {
+		"segment": {
+			"token": "dvZ7naazdlWY3Szcmk69E5G0VdJfijsl",
+			"webToken": null
 		}
 	}
 }
