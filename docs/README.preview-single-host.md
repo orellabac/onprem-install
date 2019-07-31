@@ -80,6 +80,9 @@ container services.
 
 [Click here for configuring 3rd Party integrations](README.integrations.md) including Slack.
 
+## Client setup for OnPrem installations
+
+Before the developers in your organization sign up for CodeStream they'll need to update the settings in their IDE to point CodeStream at your OnPrem installation. [Click here for detailed instructions.](README.clientsetup.md)
 
 
 ---------
