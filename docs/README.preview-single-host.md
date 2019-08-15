@@ -15,6 +15,9 @@ You will need...
    user account you intend to use for running CodeStream is able to run docker
    commands.  The fully qualified hostname of the linux server should be
    resolvable in DNS and you'll need it for the installation.
+   
+1. Make sure ports 443 (for api calls) and 12443 (for broadcast services) are
+   open to the IDEs and web clients running CodeStream.
 
 1. A valid SSL wildcard certificate along with it's corresponding key and
    certificate authority bundle (3 files in all). They should all be in pem
