@@ -1,21 +1,28 @@
 #!/bin/bash
 
 function usage {
-	echo "usage: `basename $0` --help"
-	echo "       `basename $0` [-M] -a { install | start | stop | reset | status }"
-	echo "       `basename $0` --logs {Nh | Nm}             # collect last N hours or minutes of logs"
-	echo "       `basename $0` --update-containers          # grab latest container versions (performs backup)"
-	echo "       `basename $0` --update-myself              # update the single-host-preview-install.sh script"
-	echo "       `basename $0` --backup                     # backup mongo database"
-	echo "       `basename $0` --restore {latest | <file>}  # restore mongo database from latest backup or <file>"
-	# echo "usage: $0 [-c] -a <action>"
-	# echo "    -c   run containers using docker-compose (default controls containers indivudally)
-	if [ -n "$1" ]; then
+	local cmd=`basename $0`
+	echo "usage: $cmd --help"
+	echo "       $cmd [-M] -a { install | start | stop | reset | status }"
+	echo "       $cmd --logs {Nh | Nm}               # collect last N hours or minutes of logs"
+	echo "       $cmd --update-containers [no-start] # grab latest container versions (performs backup)"
+	echo "       $cmd --update-myself [with-utils]   # update the single-host-preview-install.sh script [and utilities]"
+	echo "       $cmd --backup                       # backup mongo database"
+	echo "       $cmd --restore {latest | <file>}    # restore mongo database from latest backup or <file>"
+	echo "       $cmd --undo-stack                   # print the undo stack"
+	if [ "$1" == help ]; then
 		echo
-		echo "  Initialize CodeStream, start & stop the services"
-		echo "    -a   install | start | stop | reset | status"
-		echo "    -M   do NOT control mongo container - use client supplied mongo service"
-		echo "         set 'CS_MONGO_CONTAINER=ignore' to default the -M switch"
+		echo "  Initialization of CodeStream and container control (-a)"
+		echo "      install   create the config file and prepare the CodeStream environment"
+		echo "      start     run or start the CodeStream containers"
+		echo "      stop      stop the CodeStream containers"
+		echo "      reset     stop and remove the containers"
+		echo "                *** mongo data _should_ persist a mongo container reset, but ***"
+		echo "                *** make sure you back up the data with --backup first.      ***"
+		echo "      status    check the docker status of the containers"
+		echo
+		echo "      Note: specify -M or set environment variable CS_MONGO_CONTAINER=ignore to exclude"
+		echo "      mongo when running the commands above"
 	fi
 	exit 1
 }
@@ -30,7 +37,23 @@ function check_env {
 	echo $rc
 }
 
+function fetch_utilities {
+	local force_fl="$1"
+	[ ! -d ~/.codestream/util ] && mkdir ~/.codestream/util
+	for u in dt-merge-json
+	do
+		if [ ! -f ~/.codestream/$u -o -n "$force_fl" ]; then
+			echo "Fetching $u ..."
+			curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/util/$u -o ~/.codestream/util/$u
+			[ $? -ne 0 ] && echo "error fetching $u" && exit 1
+			chmod 750 ~/.codestream/util/$u
+		fi
+	done
+}
+
 function update_myself {
+	local force="$1"
+	[ "$force" == "--with-utils" ] && fetch_utilities $force
 	(
 		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o ~/.codestream/single-host-preview-install.sh
 		chmod +x ~/.codestream/single-host-preview-install.sh
@@ -39,37 +62,88 @@ function update_myself {
 }
 
 function update_container_versions {
-	curl -s --fail --output ~/.codestream/container-versions.new "$versionUrl"
-	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl)" && return 1
+	local undoId="$1"
+	curl -s --fail --output ~/.codestream/container-versions.new "$versionUrl$versionSufx"
+	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl$versionSufx)" && return 1
 	if [ ! -f ~/.codestream/container-versions ]; then
 		/bin/mv ~/.codestream/container-versions.new ~/.codestream/container-versions
 		return $?
 	fi
 	x=`diff ~/.codestream/container-versions.new ~/.codestream/container-versions|wc -l`
 	[ "$x" -eq 0 ] && echo "You are at the latest version" && /bin/rm -f ~/.codestream/container-versions.new && return 0
-	/bin/mv -f ~/.codestream/container-versions ~/.container-versions.undo
+	[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called update container versions()")
+	/bin/mv -f ~/.codestream/container-versions ~/.codestream/.undo/$undoId/container-versions
 	/bin/mv -f ~/.codestream/container-versions.new ~/.codestream/container-versions
-	# echo "Container versions have been updated. Perform a 'reset' then a 'start' to execute."
-	echo "~/.codestream/container-versions updated (old one is ~/.codestream/container-versions.undo)"
 	return $?
 }
 
-function update_containers_except_mongo {
-	stop_containers 0
-	backup_mongo || exit 1
-	update_container_versions
-	remove_containers 0
-	load_container_versions
-	start_containers 0
-}
-
 function load_container_versions {
-	[ ! -f ~/.codestream/container-versions ] && { update_container_versions || exit 1; }
+	local undoId="$1"
+	[ ! -f ~/.codestream/container-versions ] && { update_container_versions "$undoId" "called load_container_versions()" || exit 1; }
 	. ~/.codestream/container-versions || exit 1
 }
 
+functino get_config_file_template {
+	local undoId="$1"
+	if [ -f ~/.codestream/single-host-preview-minimal-cfg.json.template ]; then
+		[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called get_config_file_template()")
+		cp -p ~/.codestream/single-host-preview-minimal-cfg.json.template ~/.codestream/.undo/$undoId/single-host-preview-minimal-cfg.json.template
+	fi
+	echo "Fetching config file template..."
+	curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/config-templates/single-host-preview-minimal-cfg.json.template -o ~/.codestream/single-host-preview-minimal-cfg.json.template || { echo "error gett config template" >&2; exit 1; }
+	chmod 660 ~/.codestream/single-host-preview-minimal-cfg.json.template || exit 1
+}
+
+function update_config_file {
+	local undoId="$1"
+	[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called update_config_file()")
+	# backup config file & template and get new template
+	cp -p ~/.codestream/codestream-services-config.json ~/.codestream/.undo/$undoId/codestream-services-config.json
+	get_config_file_template $undoId
+	# update config file with new template data
+	run_python_script /cs/util/dt-merge-json --existing-file /cs/.undo/$undoId/codestream-services-config.json --new-file /cs/single-host-preview-minimal-cfg.json.template >~/.codestream/codestream-services-config.json
+	if [ $? -ne 0 ]; then
+		echo "There was a problem updating the config file!!!" >&2
+		exit 1
+	fi
+}
+
+function update_containers_except_mongo {
+	local nostart="$1"
+	local undoId=$(undo_stack_id "" "full container update procedure")
+	stop_containers 0
+	backup_mongo $FQHN $undoId || exit 1
+	remove_containers 0
+	update_container_versions $undoId
+	update_config_file $undoId
+	load_container_versions $undoId
+	[ -z "$nostart" ] && start_containers 0
+}
+
+function undo_stack_id {
+	local undoId="$1"
+	local eventDesc="$2"
+	[ -z "$eventDesc" ] && eventDesc="no description"
+	if [ "$undoId" == latest ]; then
+		undoId=`(cd ~/.codestream/.undo && /bin/ls |tail -1)`
+	elif [ -z "$undoId" ]; then
+		undoId=`date '+%Y-%m-%d_%H-%M-%S'`
+	fi
+	[ ! -d ~/.codestream/.undo/$undoId ] && mkdir -p ~/.codestream/.undo/$undoId
+	echo "$eventDesc" >~/.codestream/.undo/$undoId/description
+	echo $undoId
+}
+
+function print_undo_stack {
+	[ ! -d ~/.codestream/.undo ] && echo "the undo stack is empty" >&2 && return
+	for u in `ls ~/.codestream/.undo`; do
+		echo -n "  $u   `cat ~/.codestream/.undo/$u/desc`"
+	done
+}
+
 function backup_mongo {
-	local host=$1
+	local host="$1"
+	local undoId="$2"
 	[ ! -d ~/.codestream/backups ] && mkdir ~/.codestream/backups
 	local filename="dump_$(date '+%Y-%m-%d_%H-%M-%S').gz"
 	echo "docker run --rm mongo:$mongoDockerVersion mongodump --host $host --archive --gzip"
@@ -116,6 +190,10 @@ function random_string {
 	local strLen=$1
 	[ -z "$strLen" ] && strLen=18
 	head /dev/urandom | $TR_CMD -dc A-Za-z0-9 | head -c $strLen ; echo ''
+}
+
+function run_python_script {
+	docker run --rm -v ~/.codestream:/cs teamcodestream/dt-python3:$dtPython3DockerVersion $*
 }
 
 function container_state {
@@ -312,7 +390,7 @@ function capture_logs {
 }
 
 function install_and_configure {
-	[ -f ~/.codestream/codestream-services-config.json ] && echo "~/.codestream/codestream-services-config.json already exists!" && exit 1
+	[ -f ~/.codestream/codestream-services-config.json ] && echo "~/.codestream/codestream-services-config.json already exists!">&2 && exit 1
 
 	echo -n "
 This script will install the single-host-preview version of CodeStream OnPrem.
@@ -328,12 +406,11 @@ docker volumes.
 
 Press ENTER when you are ready to proceed..."
 	read
-	echo
 
 	[ ! -d ~/.codestream ] && echo "creating ~/.codestream" && mkdir ~/.codestream
+	[ ! -f ~/.codestream/single-host-preview-minimal-cfg.json.template ] && get_config_file_template
 
-	[ ! -f ~/.codestream/single-host-preview-minimal-cfg.json.template ] && echo "Fetching config file template..." && curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/config-templates/single-host-preview-minimal-cfg.json.template -o ~/.codestream/single-host-preview-minimal-cfg.json.template
-
+	echo
 	echo
 	echo "Copy your 3 SSL certificate files (cert, key and CA bundle) to ~/.codestream/".
 	echo
@@ -370,16 +447,21 @@ the SMTP settings in the config file before you start the docker services.
 runMode=individual
 action=""
 versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
+[ -f ~/.codestream/version-suffix ] && versionSufx=".`cat ~/.codestream/version-suffix`" || versionSufx=""
+[ -n "$versionSufx" ] && echo "using file suffix $versionSufx"
 logCapture=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 || runMongo=1
 [ -f ~/.codestream/config-cache ] && . ~/.codestream/config-cache
 
-load_container_versions
-
 [ $(check_env) -eq 1 ] && exit 1
 [ "$1" == "--help" -o -z "$1" ] && usage help
-[ "$1" == "--update-containers" ] && { update_containers_except_mongo; exit $?; }
-[ "$1" == "--update-myself" ] && update_myself && exit 0
+[ "$1" == "--update-myself" ] && update_myself "$2" && exit 0
+[ "$1" == "--undo-stack" ] && print_undo_stack && exit 0
+
+fetch_utilities
+load_container_versions
+
+[ "$1" == "--update-containers" ] && { update_containers_except_mongo "$2"; exit $?; }
 [ "$1" == "--logs" ] && capture_logs "$2" && exit 0
 [ "$1" == "--backup" ] && backup_mongo $FQHN && exit $?
 if [ "$1" == "--restore" ]; then
