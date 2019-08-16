@@ -20,10 +20,10 @@ def addProps(out, cur, new, spaces=""):
 	debugMsg(f"addProps:\n{spaces}> cur={cur.keys()}\n{spaces}> new={new.keys()}", spaces)
 	for prop in sorted(list(dict.fromkeys(list(cur.keys()) + list(new.keys())))):
 		if (prop in cur) and (type(cur[prop]) is dict):
-			# assume the prop is also in the new template
 			out[prop] = {}
+			newDict = new[prop] if prop in new else {}
 			debugMsg(f"prop {prop} is dict in current - Digging down in cur...", spaces)
-			addProps(out[prop], cur[prop], new[prop], f"{spaces}  ")
+			addProps(out[prop], cur[prop], newDict, f"{spaces}  ")
 		elif prop in cur:
 			# keep value from current config
 			debugMsg(f"prop {prop} is scalar in current - assigning to output config", spaces)
