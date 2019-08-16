@@ -4,7 +4,7 @@
 // - Broadcast:      codestream broadcaster
 // - Queuing:        rabbitMQ
 // - Outbound SMTP:  NodeMailer
-// - Telemetry:      Segment (CodeStream)
+// - Telemetry:      Segment production
 
 {
 	"apiServer": {
