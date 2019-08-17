@@ -4,12 +4,12 @@ function usage {
 	local cmd=`basename $0`
 	echo "usage: $cmd --help"
 	echo "       $cmd [-M] -a { install | start | stop | reset | status }"
-	echo "       $cmd --logs {Nh | Nm}               # collect last N hours or minutes of logs"
-	echo "       $cmd --update-containers [no-start] # grab latest container versions (performs backup)"
-	echo "       $cmd --update-myself [with-utils]   # update the single-host-preview-install.sh script [and utilities]"
-	echo "       $cmd --backup                       # backup mongo database"
-	echo "       $cmd --restore {latest | <file>}    # restore mongo database from latest backup or <file>"
-	echo "       $cmd --undo-stack                   # print the undo stack"
+	echo "       $cmd --logs {Nh | Nm}                 # collect last N hours or minutes of logs"
+	echo "       $cmd --update-containers [--no-start] # grab latest container versions (performs backup)"
+	echo "       $cmd --update-myself [--with-utils]   # update the single-host-preview-install.sh script [and utilities]"
+	echo "       $cmd --backup                         # backup mongo database"
+	echo "       $cmd --restore {latest | <file>}      # restore mongo database from latest backup or <file>"
+	echo "       $cmd --undo-stack                     # print the undo stack"
 	if [ "$1" == help ]; then
 		echo
 		echo "  Initialization of CodeStream and container control (-a)"
@@ -43,8 +43,8 @@ function fetch_utilities {
 	for u in dt-merge-json
 	do
 		if [ ! -f ~/.codestream/$u -o -n "$force_fl" ]; then
-			echo "Fetching $u ..."
-			curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/util/$u -o ~/.codestream/util/$u
+			# echo "Fetching $u ..."
+			curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/util/$u -o ~/.codestream/util/$u -s
 			[ $? -ne 0 ] && echo "error fetching $u" && exit 1
 			chmod 750 ~/.codestream/util/$u
 		fi
@@ -55,26 +55,30 @@ function update_myself {
 	local force="$1"
 	[ "$force" == "--with-utils" ] && fetch_utilities $force
 	(
-		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o ~/.codestream/single-host-preview-install.sh
+		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o ~/.codestream/single-host-preview-install.sh -s
 		chmod +x ~/.codestream/single-host-preview-install.sh
 	)
 	exit
 }
 
+# returns:
+#   0   successfully updated
+#   1   no update necessary
+#   2   error during update
 function update_container_versions {
 	local undoId="$1"
 	curl -s --fail --output ~/.codestream/container-versions.new "$versionUrl$versionSufx"
-	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl$versionSufx)" && return 1
+	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl$versionSufx)" && return 2
 	if [ ! -f ~/.codestream/container-versions ]; then
-		/bin/mv ~/.codestream/container-versions.new ~/.codestream/container-versions
-		return $?
+		/bin/mv ~/.codestream/container-versions.new ~/.codestream/container-versions || return 2
+		return 0
 	fi
 	x=`diff ~/.codestream/container-versions.new ~/.codestream/container-versions|wc -l`
-	[ "$x" -eq 0 ] && echo "You are at the latest version" && /bin/rm -f ~/.codestream/container-versions.new && return 0
+	[ "$x" -eq 0 ] && echo "You are at the latest version" && /bin/rm -f ~/.codestream/container-versions.new && return 1
 	[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called update container versions()")
-	/bin/mv -f ~/.codestream/container-versions ~/.codestream/.undo/$undoId/container-versions
-	/bin/mv -f ~/.codestream/container-versions.new ~/.codestream/container-versions
-	return $?
+	/bin/mv -f ~/.codestream/container-versions ~/.codestream/.undo/$undoId/container-versions || return 2
+	/bin/mv -f ~/.codestream/container-versions.new ~/.codestream/container-versions || return 2
+	return 0
 }
 
 function load_container_versions {
@@ -83,7 +87,7 @@ function load_container_versions {
 	. ~/.codestream/container-versions || exit 1
 }
 
-functino get_config_file_template {
+function get_config_file_template {
 	local undoId="$1"
 	if [ -f ~/.codestream/single-host-preview-minimal-cfg.json.template ]; then
 		[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called get_config_file_template()")
@@ -101,11 +105,13 @@ function update_config_file {
 	cp -p ~/.codestream/codestream-services-config.json ~/.codestream/.undo/$undoId/codestream-services-config.json
 	get_config_file_template $undoId
 	# update config file with new template data
-	run_python_script /cs/util/dt-merge-json --existing-file /cs/.undo/$undoId/codestream-services-config.json --new-file /cs/single-host-preview-minimal-cfg.json.template >~/.codestream/codestream-services-config.json
-	if [ $? -ne 0 ]; then
+	run_python_script /cs/util/dt-merge-json --existing-file /cs/.undo/$undoId/codestream-services-config.json --new-file /cs/single-host-preview-minimal-cfg.json.template >~/.codestream/codestream-services-config.json.new
+	if [ $rc -ne 0 -o ! -s ~/.codestream/codestream-services-config.json.new ]; then
 		echo "There was a problem updating the config file!!!" >&2
+		/bin/rm -f ~/.codestream/codestream-services-config.json.new
 		exit 1
 	fi
+	/bin/mv -f ~/.codestream/codestream-services-config.json.new ~/.codestream/codestream-services-config.json
 }
 
 function update_containers_except_mongo {
@@ -115,8 +121,14 @@ function update_containers_except_mongo {
 	backup_mongo $FQHN $undoId || exit 1
 	remove_containers 0
 	update_container_versions $undoId
-	update_config_file $undoId
-	load_container_versions $undoId
+	local rc=$?
+	[ $rc -eq 2 ] && echo "error updating containers">&2 && exit 1
+	if [ $rc -eq 0 ]; then
+		load_container_versions $undoId
+		update_config_file $undoId
+	else
+		echo "Container version file was already up to date"
+	fi
 	[ -z "$nostart" ] && start_containers 0
 }
 
@@ -137,7 +149,7 @@ function undo_stack_id {
 function print_undo_stack {
 	[ ! -d ~/.codestream/.undo ] && echo "the undo stack is empty" >&2 && return
 	for u in `ls ~/.codestream/.undo`; do
-		echo -n "  $u   `cat ~/.codestream/.undo/$u/desc`"
+		echo "  $u   `cat ~/.codestream/.undo/$u/description`"
 	done
 }
 
@@ -192,8 +204,10 @@ function random_string {
 	head /dev/urandom | $TR_CMD -dc A-Za-z0-9 | head -c $strLen ; echo ''
 }
 
+# this reports results to stdout so redirect other msgs to stderr
 function run_python_script {
-	docker run --rm -v ~/.codestream:/cs teamcodestream/dt-python3:$dtPython3DockerVersion $*
+	# echo "docker run --rm  --network=host -v ~/.codestream:/cs teamcodestream/dt-python3:$dtPython3DockerVersion $*" >&2
+	docker run --rm  --network=host -v ~/.codestream:/cs teamcodestream/dt-python3:$dtPython3DockerVersion $*
 }
 
 function container_state {
