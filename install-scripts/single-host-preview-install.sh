@@ -73,7 +73,7 @@ function update_container_versions {
 		return 0
 	fi
 	x=`diff ~/.codestream/container-versions.new ~/.codestream/container-versions|wc -l`
-	[ "$x" -eq 0 ] && echo "You are at the latest version" && /bin/rm -f ~/.codestream/container-versions.new && return 1
+	[ "$x" -eq 0 ] && /bin/rm -f ~/.codestream/container-versions.new && return 1
 	[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called update container versions()")
 	/bin/mv -f ~/.codestream/container-versions ~/.codestream/.undo/$undoId/container-versions || return 2
 	/bin/mv -f ~/.codestream/container-versions.new ~/.codestream/container-versions || return 2
@@ -116,6 +116,7 @@ function update_config_file {
 function update_containers_except_mongo {
 	local nostart="$1"
 	local undoId=$(undo_stack_id "" "full container update procedure")
+	backup_dot_codestream $undoId
 	stop_containers 0
 	backup_mongo $FQHN $undoId || exit 1
 	remove_containers 0
@@ -126,7 +127,7 @@ function update_containers_except_mongo {
 		load_container_versions $undoId
 		update_config_file $undoId
 	else
-		echo "Container version file was already up to date"
+		echo "You are already running the latest container versions"
 	fi
 	[ -z "$nostart" ] && start_containers 0
 }
@@ -150,6 +151,12 @@ function print_undo_stack {
 	for u in `ls ~/.codestream/.undo`; do
 		echo "  $u   `cat ~/.codestream/.undo/$u/description`"
 	done
+}
+
+function backup_dot_codestream {
+	local undoId="$1"
+	[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called backup_dot_codestream()")
+	tar -C ~/.codestream -czpf ~/.codestream/.undo/$undoId/dot.codestream.tgz  --exclude='backups*' --exclude='.undo*' --exclude='log-capture*' .
 }
 
 function backup_mongo {
@@ -219,7 +226,7 @@ function run_or_start_container {
 	local state=$(container_state $container)
 	[ "$state" == "running" ] && echo "Container $container is already running" >&2 && return
 	if [ "$state" == "exited" ]; then
-		echo "docker start $container"
+		# echo "docker start $container"
 		docker start $container
 		return
 	fi
@@ -249,6 +256,7 @@ function start_containers {
 		run_or_start_container csmongo
 		sleep 5
 	fi
+	echo "Starting containuers..."
 	run_or_start_container csrabbitmq
 	sleep 7
 	run_or_start_container csbcast
@@ -259,18 +267,50 @@ function start_containers {
 
 function stop_containers {
 	local runMongoFlag=$1
+	local c
+	local state
 	[ -z "$runMongoFlag" ] && runMongoFlag=$runMongo
-	echo docker stop csapi csmailout csbcast csrabbitmq
-	docker stop csapi csmailout csbcast csrabbitmq
-	[ $runMongoFlag -eq 1 ] && echo "docker stop csmongo" && docker stop csmongo
+	local containers="csapi csmailout csbcast csrabbitmq"
+	[ $runMongoFlag -eq 1 ] && containers="$containers csmongo"
+	echo "Stopping containers..."
+	for c in $containers
+	do
+		state=$(container_state $c)
+		# echo "container $c state: $state"
+		if [ "$state" == "running" ]; then
+			docker stop $c
+		elif [ "$state" == "exited" ]; then
+			echo "container $c is not running "
+		elif [ -z "$state" ]; then
+			echo "container $c not found - nothing to stop"
+		else
+			echo "container $c is in an unknown state ($state)"
+		fi
+	done
 }
 
 function remove_containers {
 	local runMongoFlag=$1
 	[ -z "$runMongoFlag" ] && runMongoFlag=$runMongo
-	echo docker rm csapi csmailout csbcast csrabbitmq
-	docker rm csapi csmailout csbcast csrabbitmq
-	[ $runMongoFlag -eq 1 ] && echo "docker rm csmongo" && docker rm csmongo
+	# echo docker rm csapi csmailout csbcast csrabbitmq
+	# docker rm csapi csmailout csbcast csrabbitmq
+	local containers="csapi csmailout csbcast csrabbitmq"
+	[ $runMongoFlag -eq 1 ] && containers="$containers csmongo"
+	echo "Removing containers..."
+	for c in $containers
+	do
+		state=$(container_state $c)
+		# echo "state of $c is $state"
+		if [ "$state" == "exited" ]; then
+			# echo "docker rm $c"
+			docker rm $c
+		elif [ -z "$state" ]; then
+			echo "container $c not found - nothing to remove"
+		else
+			echo "container $c is in an unexpected state ($state)"
+		fi
+	done
+	# [ $runMongoFlag -eq 1 ] && echo "docker rm csmongo" && docker rm csmongo
 }
 
 function docker_status {
@@ -503,19 +543,17 @@ shift `expr $OPTIND - 1`
 case $action in
 	install)
 		install_and_configure;;
-	start_containers)
+	reset)
 		echo "Stopping and removing codestream containers..."
 		stop_containers
 		remove_containers;;
 	start)
-		echo "Starting codestream containers..."
 		start_containers
 		sleep 1
 		docker_status;;
 	status)
 		docker_status;;
 	stop)
-		echo "Stopping codestream containers..."
 		stop_containers;;
 	*)
 		usage;;
