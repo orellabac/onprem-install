@@ -6,7 +6,7 @@ function usage {
 	echo "       $cmd [-M] -a { install | start | stop | reset | status }"
 	echo "       $cmd --logs {Nh | Nm}                 # collect last N hours or minutes of logs"
 	echo "       $cmd --update-containers [--no-start] # grab latest container versions (performs backup)"
-	echo "       $cmd --update-myself [--with-utils]   # update the single-host-preview-install.sh script [and utilities]"
+	echo "       $cmd --update-myself                  # update the single-host-preview-install.sh script [and utilities]"
 	echo "       $cmd --backup                         # backup mongo database"
 	echo "       $cmd --restore {latest | <file>}      # restore mongo database from latest backup or <file>"
 	echo "       $cmd --undo-stack                     # print the undo stack"
@@ -52,13 +52,12 @@ function fetch_utilities {
 }
 
 function update_myself {
-	local force="$1"
-	[ "$force" == "--with-utils" ] && fetch_utilities $force
+	fetch_utilities --force
 	(
 		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o ~/.codestream/single-host-preview-install.sh -s
 		chmod +x ~/.codestream/single-host-preview-install.sh
 	)
-	exit
+	exit 0
 }
 
 # returns:
