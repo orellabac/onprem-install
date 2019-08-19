@@ -32,7 +32,7 @@ To connect CodeStream to Slack, complete the following steps.
                   "appClientId": "slack-app-client-id",
                   "appClientSecret": "slack-app-client-secret",
                   "appStrictClientId": "slack-app-client-id",
-                  "appStrictClientSecret": "slack-app-client-secret",
+                  "appStrictClientSecret": "slack-app-client-secret"
               }
           }
       }
