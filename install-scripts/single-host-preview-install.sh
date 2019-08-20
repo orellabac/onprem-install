@@ -3,7 +3,7 @@
 function usage {
 	local cmd=`basename $0`
 	echo "usage: $cmd --help"
-	echo "       $cmd [-M] -a { install | start | stop | reset | status }"
+	echo "       $cmd [-M] -a { install | start | stop | reset | status | start_mongo }"
 	echo "       $cmd --logs {Nh | Nm}                 # collect last N hours or minutes of logs"
 	echo "       $cmd --update-containers [--no-start] # grab latest container versions (performs backup)"
 	echo "       $cmd --update-myself                  # update the single-host-preview-install.sh script [and utilities]"
@@ -164,8 +164,9 @@ function backup_mongo {
 	local undoId="$2"
 	[ ! -d ~/.codestream/backups ] && mkdir ~/.codestream/backups
 	local filename="dump_$(date '+%Y-%m-%d_%H-%M-%S').gz"
-	echo "docker run --rm mongo:$mongoDockerVersion mongodump --host $host --archive --gzip"
-	docker run --rm mongo:$mongoDockerVersion mongodump --host $host --archive --gzip | cat > ~/.codestream/backups/$filename
+	# echo "docker run --rm mongo:$mongoDockerVersion mongodump --host $host --archive --gzip"
+	# docker run --rm mongo:$mongoDockerVersion mongodump --host $host --archive --gzip | cat > ~/.codestream/backups/$filename
+	docker run --rm --network=host mongo:$mongoDockerVersion mongodump --host localhost --archive --gzip | cat > ~/.codestream/backups/$filename
 	[ $? -ne 0 -o \( ! -s ~/.codestream/backups/$filename \) ] && echo "backup failed" >&2 && return 1
 	echo "Backed up $host to ~/.codestream/backups/$filename"
 	return 0
@@ -186,7 +187,8 @@ function restore_mongo {
 		yesno "Do you want to proceed (y/N)? "
 		[ $? -eq 0 ] && echo "never mind" && return 1
 	fi
-	cat $file | docker run --rm -i mongo:$mongoDockerVersion mongorestore --host $host --archive --gzip --drop
+	# cat $file | docker run --rm -i mongo:$mongoDockerVersion mongorestore --host $host --archive --gzip --drop
+	cat $file | docker run --rm -i --network=host mongo:$mongoDockerVersion mongorestore --host localhost --archive --gzip --drop
 	[ $? -ne 0 ] && echo "error restoring data!!" >&2 && return 1
 	return 0
 }
@@ -234,6 +236,7 @@ function run_or_start_container {
 	echo "running container $container (docker run)"
 	case $container in
 	csmongo)
+		echo docker run -d -P --network="host" --name csmongo --mount 'type=volume,source=csmongodata,target=/data' mongo:$mongoDockerVersion
 		docker run -d -P --network="host" --name csmongo --mount 'type=volume,source=csmongodata,target=/data' mongo:$mongoDockerVersion;;
 	csrabbitmq)
 		docker run -d -P --network="host" --name csrabbitmq teamcodestream/rabbitmq-onprem:$rabbitDockerVersion;;
@@ -535,7 +538,7 @@ do
 	esac
 done
 shift `expr $OPTIND - 1`
-[ -z "`echo $action | egrep -e '^(install|start|stop|reset|status)$'`" ] && echo "bad action" && usage
+[ -z "`echo $action | egrep -e '^(install|start|start_mongo|stop|reset|status)$'`" ] && echo "bad action" && usage
 
 
 [ $runMongo -eq 0 ] && echo "Mongo container will not be touched (CS_MONGO_CONTAINER=ignore)"
@@ -550,6 +553,10 @@ case $action in
 	start)
 		start_containers
 		sleep 1
+		docker_status;;
+	start_mongo)
+		run_or_start_container csmongo
+		sleep 2
 		docker_status;;
 	status)
 		docker_status;;
