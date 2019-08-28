@@ -90,7 +90,7 @@
 		"cookie": "{{SECRET_COOKIE}}",
 		"mail": "{{SECRET_MAIL}}",
 		"subscriptionCheat": "{{SECRET_SUBSCRIPTION_CHEAT}}",
-		"telemetry": "{{SECRET_TELEMETRY}}"
+		"telemetry": "84$gTe^._qHm,#D"
 	},
 	"ssl": {
 		"cafile": "/opt/config/{{SSL_CA_FILE}}",

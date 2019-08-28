@@ -331,7 +331,6 @@ function load_config_cache {
 	[ -z "$SECRET_CONFIRMATION_CHEAT" ] && SECRET_CONFIRMATION_CHEAT=$(random_string)
 	[ -z "$SECRET_SUBSCRIPTION_CHEAT" ] && SECRET_SUBSCRIPTION_CHEAT=$(random_string)
 	[ -z "$SECRET_MAIL" ] && SECRET_MAIL=$(random_string)
-	[ -z "$SECRET_TELEMETRY" ] && SECRET_TELEMETRY=$(random_string)
 	[ -z "$SECRET_BROADCAST_API" ] && SECRET_BROADCAST_API=$(random_string)
 	[ -z "$SECRET_BROADCAST_AUTH" ] && SECRET_BROADCAST_AUTH=$(random_string)
 	[ -z "$SENDER_EMAIL" ] && SENDER_EMAIL="codestream_alerts@$mailDomain"
@@ -348,7 +347,6 @@ SECRET_COOKIE=$SECRET_COOKIE
 SECRET_CONFIRMATION_CHEAT=$SECRET_CONFIRMATION_CHEAT
 SECRET_SUBSCRIPTION_CHEAT=$SECRET_SUBSCRIPTION_CHEAT
 SECRET_MAIL=$SECRET_MAIL
-SECRET_TELEMETRY=$SECRET_TELEMETRY
 SECRET_BROADCAST_API=$SECRET_BROADCAST_API
 SECRET_BROADCAST_AUTH=$SECRET_BROADCAST_AUTH
 SENDER_EMAIL=$SENDER_EMAIL
@@ -374,7 +372,6 @@ Current configuration values:
 	# Confirmation secret:             $SECRET_CONFIRMATION_CHEAT
 	# Subscription secret:             $SECRET_SUBSCRIPTION_CHEAT
 	# Mail secret:                     $SECRET_MAIL
-	# Telemetry secret:                $SECRET_TELEMETRY
 	# Broadcast API secret:            $SECRET_BROADCAST_API
 	# Broadcast auth secret:           $SECRET_BROADCAST_AUTH
 }
@@ -390,7 +387,6 @@ function edit_config_vars {
 	# echo -n "Confirmation secret ($SECRET_CONFIRMATION_CHEAT): "; read newVal; [ -n "$newVal" ] && SECRET_CONFIRMATION_CHEAT=$newVal
 	# echo -n "Subscription secret ($SECRET_SUBSCRIPTION_CHEAT): "; read newVal; [ -n "$newVal" ] && SECRET_SUBSCRIPTION_CHEAT=$newVal
 	# echo -n "Mail secret ($SECRET_MAIL): "; read newVal; [ -n "$newVal" ] && SECRET_MAIL=$newVal
-	# echo -n "Telemetry secret ($SECRET_TELEMETRY): "; read newVal; [ -n "$newVal" ] && SECRET_TELEMETRY=$newVal
 	# echo -n "Broadcast API secret ($SECRET_BROADCAST_API): "; read newVal; [ -n "$newVal" ] && SECRET_BROADCAST_API=$newVal
 	# echo -n "Broadcast auth secret ($SECRET_BROADCAST_AUTH): "; read newVal; [ -n "$newVal" ] && SECRET_BROADCAST_AUTH=$newVal
 	echo -n "Email sender address ($SENDER_EMAIL): "; read newVal; [ -n "$newVal" ] && SENDER_EMAIL=$newVal
@@ -422,7 +418,6 @@ function create_config_from_template {
 	| sed -e "s/{{SECRET_CONFIRMATION_CHEAT}}/$SECRET_CONFIRMATION_CHEAT/g" \
 	| sed -e "s/{{SECRET_SUBSCRIPTION_CHEAT}}/$SECRET_SUBSCRIPTION_CHEAT/g" \
 	| sed -e "s/{{SECRET_MAIL}}/$SECRET_MAIL/g" \
-	| sed -e "s/{{SECRET_TELEMETRY}}/$SECRET_TELEMETRY/g" \
 	| sed -e "s/{{SECRET_BROADCAST_API}}/$SECRET_BROADCAST_API/g" \
 	| sed -e "s/{{SECRET_BROADCAST_AUTH}}/$SECRET_BROADCAST_AUTH/g" \
 	> $cfg_file
