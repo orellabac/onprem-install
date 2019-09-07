@@ -93,7 +93,7 @@ function get_config_file_template {
 		cp -p ~/.codestream/single-host-preview-minimal-cfg.json.template ~/.codestream/.undo/$undoId/single-host-preview-minimal-cfg.json.template
 	fi
 	echo "Fetching config file template..."
-	curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/config-templates/single-host-preview-minimal-cfg.json.template -o ~/.codestream/single-host-preview-minimal-cfg.json.template || { echo "error gett config template" >&2; exit 1; }
+	curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/config-templates/single-host-preview-minimal-cfg.json.template$versionSufx -o ~/.codestream/single-host-preview-minimal-cfg.json.template || { echo "error gett config template" >&2; exit 1; }
 	chmod 660 ~/.codestream/single-host-preview-minimal-cfg.json.template || exit 1
 }
 
@@ -498,7 +498,7 @@ the SMTP settings in the config file before you start the docker services.
 runMode=individual
 action=""
 versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
-[ -f ~/.codestream/version-suffix ] && versionSufx=".`cat ~/.codestream/version-suffix`" || versionSufx=""
+[ -f ~/.codestream/version-suffix ] && versionSufx=".`cat ~/.codestream/version-suffix`" || versionSufx=""  #eg. 'beta'
 [ -n "$versionSufx" ] && echo "using file suffix $versionSufx"
 logCapture=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 || runMongo=1
