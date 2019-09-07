@@ -23,13 +23,13 @@ You will need...
    certificate authority bundle (3 files in all). They should all be in pem
    format.
 
-1. At this time, CodeStream OnPrem is invitation only. You will need an
+1. At this time **CodeStream OnPrem** is invitation only. You will need an
    account on [Docker Hub](https://hub.docker.com) and you will need to be
-   invited to the TeamCodeStream organization.
+   invited to the TeamCodeStream organization. Send an email to sales@codestream.com with your docker hub ID to request access.
 
 To simplify the initial configuration, there is a **bash** script that will take
 you through the configuration process. You can also use it to control the
-container services.
+container services and maintenance functions.
 
 ----
 ## Install the config script and create the configuration file
@@ -103,13 +103,26 @@ $ ~/.codestream/single-host-preview-install.sh -a start
 $ ~/.codestream/single-host-preview-install.sh -a stop
 ```
 
-### Stop the services and remove all the containers
-(this will leave the mongo data volume intact)
-```
-$ ~/.codestream/single-host-preview-install.sh -a reset
-```
-
 ### See your containers and mongo data volume
 ```
 $ ~/.codestream/single-host-preview-install.sh -a status
+```
+
+### Backup your data
+```
+$ ~/.codestream/single-host-preview-install.sh --backup
+```
+
+### Update your containers
+```
+$ ~/.codestream/single-host-preview-install.sh --update-myself
+$ ~/.codestream/single-host-preview-install.sh --update-containers
+```
+
+### Stop the services and remove all the containers
+Tthis _should_ leave the mongo data volume intact, but make sure you backup the
+database _BEFORE_ doing a reset. Specify `-M` to exclude the mongo container
+from the reset.
+```
+$ ~/.codestream/single-host-preview-install.sh [-M] -a reset
 ```

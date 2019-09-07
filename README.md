@@ -31,3 +31,6 @@ NOTE: The **CodeStream inbound email gateway** is not available at this time.
 Once you've been invited by the CodeStream sales team, [click here for
 instructions on how to set up a preview environment on a single linux host OS
 running Docker.](docs/README.preview-single-host.md) 
+
+## Architecture Diagram
+![image](docs/images/codestream-onprem-arch.png)
