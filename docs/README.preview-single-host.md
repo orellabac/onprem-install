@@ -50,6 +50,13 @@ container services and maintenance functions.
     $ chmod +x single-host-preview-install.sh
     ```
 
+1. If you want to run the **BETA** version of On-Prem, execute this command. You
+   should not do this unless you are working closely with CodeStream support. The
+   beta docker images are unsupported.
+    ```
+    $ echo beta > ~/.codestream/version-suffix.beta
+    ```
+
 1. Run the script to create a base configuration. It's interactive. Once this
    step is complete, you will have a configuration file,
    *~/.codestream/codestream-services-config.json*, which you will be editing in

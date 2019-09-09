@@ -1,0 +1,111 @@
+// Profile: creates the on-prem single host preview template
+//
+// - Storage:        mongo
+// - Broadcast:      codestream broadcaster
+// - Queuing:        rabbitMQ
+// - Outbound SMTP:  NodeMailer
+// - Telemetry:      Segment production
+
+{
+	"apiServer": {
+		"assetEnvironment": "onprem",
+		"authOrigin": "https://my-codestream-proxy.my-company.com/no-auth",
+		"callbackEnvironment": "onprem",
+		"confirmCodeExpiration": 604800000,
+		"confirmationExpiration": 86400000,
+		"confirmationNotRequired": false,
+		"dontWantAWS": true,
+		"forgotPasswordExpiration": 86400000,
+		"helpIsAvailable": false,
+		"ignoreHttps": false,
+		"logger": {
+			"consoleOk": true,
+			"debugOk": false,
+			"directory": "/opt/api/log"
+		},
+		"mockMode": false,
+		"port": 443,
+		"publicApiUrl": "https://{{FQHN}}",
+		"runTimeEnvironment": "onprem",
+		"sessionAwayTimeout": 600000,
+		"showConfig": false,
+		"signupTokenExpiration": 600000,
+		"tmpDirectory": "/opt/api/tmp"
+	},
+	"broadcastEngine": {
+		"codestreamBroadcaster": {
+			"assetEnvironment": "local",
+			"host": "{{FQHN}}",
+			"logger": {
+				"consoleOk": true,
+				"debugOk": false,
+				"directory": "/opt/broadcaster/log"
+			},
+			"port": 12443,
+			"runTimeEnvironment": "local",
+			"secrets": {
+				"api": "{{SECRET_BROADCAST_API}}",
+				"auth": "{{SECRET_BROADCAST_AUTH}}"
+			},
+			"showConfig": false
+		}
+	},
+	"email": {
+		"emailTo": null,
+		"notificationInterval": 300000,
+		"replyToDomain": "{{FQHN}}",
+		"senderEmail": "{{SENDER_EMAIL}}",
+		"supportEmail": "{{SUPPORT_EMAIL}}",
+		"suppressEmails": false
+	},
+	"emailDeliveryService": {
+		"NodeMailer": {
+			"host": null,
+			"password": null,
+			"port": 587,
+			"secure": true,
+			"service": null,
+			"username": null
+		}
+	},
+	"outboundEmailServer": {
+		"logger": {
+			"consoleOk": true,
+			"debugOk": false,
+			"directory": "/opt/mailout/log"
+		}
+	},
+	"queuingEngine": {
+		"rabbitmq": {
+			"host": "{{FQHN}}",
+			"outboundEmailQueueName": "outboundEmail",
+			"password": "stream",
+			"port": 5672,
+			"user": "code"
+		}
+	},
+	"sharedSecrets": {
+		"auth": "{{SECRET_AUTH}}",
+		"confirmationCheat": "{{SECRET_CONFIRMATION_CHEAT}}",
+		"cookie": "{{SECRET_COOKIE}}",
+		"mail": "{{SECRET_MAIL}}",
+		"subscriptionCheat": "{{SECRET_SUBSCRIPTION_CHEAT}}",
+		"telemetry": "84$gTe^._qHm,#D"
+	},
+	"ssl": {
+		"cafile": "/opt/config/{{SSL_CA_FILE}}",
+		"certfile": "/opt/config/{{SSL_CERT_FILE}}",
+		"keyfile": "/opt/config/{{SSL_KEY_FILE}}"
+	},
+	"storage": {
+		"mongo": {
+			"url": "mongodb://{{FQHN}}/codestream"
+		}
+	},
+	"telemetry": {
+		"segment": {
+			"token": "dvZ7naazdlWY3Szcmk69E5G0VdJfijsl",
+			"webToken": null
+		}
+	}
+}
