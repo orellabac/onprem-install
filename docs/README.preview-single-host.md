@@ -54,7 +54,7 @@ container services and maintenance functions.
    should not do this unless you are working closely with CodeStream support. The
    beta docker images are unsupported.
     ```
-    $ echo beta > ~/.codestream/version-suffix.beta
+    $ echo beta > ~/.codestream/release
     ```
 
 1. Run the script to create a base configuration. It's interactive. Once this

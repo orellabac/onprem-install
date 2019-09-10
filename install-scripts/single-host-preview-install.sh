@@ -66,8 +66,8 @@ function update_myself {
 #   2   error during update
 function update_container_versions {
 	local undoId="$1"
-	curl -s --fail --output ~/.codestream/container-versions.new "$versionUrl$versionSufx"
-	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl$versionSufx)" && return 2
+	curl -s --fail --output ~/.codestream/container-versions.new "$versionUrl$releaseSufx"
+	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl$releaseSufx)" && return 2
 	if [ ! -f ~/.codestream/container-versions ]; then
 		/bin/mv ~/.codestream/container-versions.new ~/.codestream/container-versions || return 2
 		return 0
@@ -93,7 +93,7 @@ function get_config_file_template {
 		cp -p ~/.codestream/single-host-preview-minimal-cfg.json.template ~/.codestream/.undo/$undoId/single-host-preview-minimal-cfg.json.template
 	fi
 	echo "Fetching config file template..."
-	curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/config-templates/single-host-preview-minimal-cfg.json.template$versionSufx -o ~/.codestream/single-host-preview-minimal-cfg.json.template || { echo "error gett config template" >&2; exit 1; }
+	curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/config-templates/single-host-preview-minimal-cfg.json.template$releaseSufx -o ~/.codestream/single-host-preview-minimal-cfg.json.template || { echo "error gett config template" >&2; exit 1; }
 	chmod 660 ~/.codestream/single-host-preview-minimal-cfg.json.template || exit 1
 }
 
@@ -498,8 +498,8 @@ the SMTP settings in the config file before you start the docker services.
 runMode=individual
 action=""
 versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
-[ -f ~/.codestream/version-suffix ] && versionSufx=".`cat ~/.codestream/version-suffix`" || versionSufx=""  #eg. 'beta'
-[ -n "$versionSufx" ] && echo "using file suffix $versionSufx"
+[ -f ~/.codestream/release ] && releaseSufx=".`cat ~/.codestream/release`" || releaseSufx=""  #eg. 'beta'
+[ -n "$releaseSufx" ] && echo "using file suffix $releaseSufx"
 logCapture=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 || runMongo=1
 [ -f ~/.codestream/config-cache ] && . ~/.codestream/config-cache
