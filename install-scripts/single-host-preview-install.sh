@@ -100,7 +100,7 @@ function get_config_file_template {
 function update_config_file {
 	local undoId="$1"
 	[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called update_config_file()")
-	# backup config file & template and get new template
+	echo "updating config file"
 	cp -p ~/.codestream/codestream-services-config.json ~/.codestream/.undo/$undoId/codestream-services-config.json
 	get_config_file_template $undoId
 	# update config file with new template data
@@ -499,7 +499,7 @@ runMode=individual
 action=""
 versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
 [ -f ~/.codestream/release ] && releaseSufx=".`cat ~/.codestream/release`" || releaseSufx=""  #eg. 'beta'
-[ -n "$releaseSufx" ] && echo "using file suffix $releaseSufx"
+[ -n "$releaseSufx" ] && echo "Running $releaseSufx release of CodeStream"
 logCapture=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 || runMongo=1
 [ -f ~/.codestream/config-cache ] && . ~/.codestream/config-cache
