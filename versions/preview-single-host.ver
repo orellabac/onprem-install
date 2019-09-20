@@ -1,6 +1,6 @@
-apiDockerVersion=0.0.8
-broadcasterDockerVersion=0.0.9
-mailoutDockerVersion=0.0.8
-mongoDockerVersion=3.4.9
-rabbitDockerVersion=0.0.0
-dtPython3DockerVersion=0.0.0
+apiDockerVersion="1.21.15-1382"
+broadcasterDockerVersion="1.0.1-4"
+dtPython3DockerVersion="0.0.0"
+mailoutDockerVersion="0.5.4-112"
+mongoDockerVersion="3.4.9"
+rabbitDockerVersion="0.0.0"
