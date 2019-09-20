@@ -1,0 +1,42 @@
+#!/bin/bash
+
+function usage {
+	echo "
+usage: `basename $0` <from-release> <to-release>
+
+   use 'prod'
+
+   eg.
+      `basename $0` beta pre-release
+      `basename $0` beta prod
+"
+	exit 1
+}
+
+function get_file_name {
+	local release=$1
+	local fileName=$2
+	[ $release == prod ] && echo $fileName && return
+	echo $fileName.$release
+}
+
+[ -z "$2" ] && usage
+
+fromRel=$1
+toRel=$2
+binDir=`dirname $0`
+repoRoot=`cd $binDir/.. && pwd`
+(cd $repoRoot && git pull origin --rebase) || { echo "pull --rebase failed"; exit 1; }
+for file in versions/preview-single-host.ver config-templates/single-host-preview-minimal-cfg.json.template
+do
+	fromFile=$(get_file_name $fromRel $file)
+	toFile=$(get_file_name $toRel $file)
+	[ ! -f $fromFile ] && echo "$fromFile not found" && exit 1
+	if [ ! -f $toFile ]; then
+		echo -n "$toFile not found - create new release (y/N)? "
+		read ans
+		[ "$ans" != y -a "$ans" != yes ] && exit 1
+	fi
+	echo cp $fromFile $toFile
+	cp $fromFile $toFile
+done
