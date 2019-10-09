@@ -1,7 +1,7 @@
 # CodeStream OnPrem
 
 ## Overview
-**CodeStream OnPrem** is a dcoker-ized version of the CodeStream Cloud services
+**CodeStream OnPrem** is a docker-ized version of the CodeStream Cloud services
 which you can install and operate entirely on your own hardware (or cloud
 service provider). You only need a linux host OS running Docker.
 
