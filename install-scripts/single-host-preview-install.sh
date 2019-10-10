@@ -2,27 +2,32 @@
 
 function usage {
 	local cmd=`basename $0`
-	echo "usage: $cmd --help"
-	echo "       $cmd [-M] -a { install | start | stop | reset | status | start_mongo }"
-	echo "       $cmd --logs {Nh | Nm}                 # collect last N hours or minutes of logs"
-	echo "       $cmd --update-containers [--no-start] # grab latest container versions (performs backup)"
-	echo "       $cmd --update-myself                  # update the single-host-preview-install.sh script [and utilities]"
-	echo "       $cmd --backup                         # backup mongo database"
-	echo "       $cmd --restore {latest | <file>}      # restore mongo database from latest backup or <file>"
-	echo "       $cmd --undo-stack                     # print the undo stack"
+	echo "
+usage:
+    $cmd --help
+    $cmd [-M] -a { install | start | stop | reset | status | start_mongo }
+    $cmd --logs {Nh | Nm}                 # collect last N hours or minutes of logs
+    $cmd --update-containers [--no-start] # grab latest container versions (performs backup)
+    $cmd --update-myself                  # update the single-host-preview-install.sh script [and utilities]
+    $cmd --backup                         # backup mongo database
+    $cmd --restore {latest | <file>}      # restore mongo database from latest backup or <file>
+    $cmd --repair-db <repair-script.js>   # run mongo repair commands
+    $cmd --undo-stack                     # print the undo stack
+"
 	if [ "$1" == help ]; then
-		echo
-		echo "  Initialization of CodeStream and container control (-a)"
-		echo "      install   create the config file and prepare the CodeStream environment"
-		echo "      start     run or start the CodeStream containers"
-		echo "      stop      stop the CodeStream containers"
-		echo "      reset     stop and remove the containers"
-		echo "                *** mongo data _should_ persist a mongo container reset, but ***"
-		echo "                *** make sure you back up the data with --backup first.      ***"
-		echo "      status    check the docker status of the containers"
-		echo
-		echo "      Note: specify -M or set environment variable CS_MONGO_CONTAINER=ignore to exclude"
-		echo "      mongo when running the commands above"
+		echo "
+    Initialization of CodeStream and container control (-a)
+        install   create the config file and prepare the CodeStream environment
+        start     run or start the CodeStream containers
+        stop      stop the CodeStream containers
+        reset     stop and remove the containers
+                  *** mongo data _should_ persist a mongo container reset, but ***
+                  *** make sure you back up the data with --backup first.      ***
+        status    check the docker status of the containers
+
+    Note: specify -M or set environment variable CS_MONGO_CONTAINER=ignore to exclude
+    mongo when running the commands above
+"
 	fi
 	exit 1
 }
@@ -221,6 +226,15 @@ function run_python_script {
 function container_state {
 	local container=$1
 	docker inspect --format='{{.State.Status}}' $container  2>/dev/null|grep -v '^[[:blank:]]*$'
+}
+
+function repair_db {
+	local fixScript=$1
+	[ -z "$fixScript" ] && echo "name of fix script is required" && return 1
+	fixScript=$(basename $fixScript)
+	[ ! -f ~/.codestream/$fixScript ] && echo "~/.codestream/$fixScript not found" >&2 && return 1
+	docker run --rm --network=host -v ~/.codestream:/cs mongo:$mongoDockerVersion mongo mongodb://localhost/codestream /cs/$fixScript && echo "repair script ran successfully" || { echo "repair script indicated failure"; return 1; }
+	return 0
 }
 
 function run_or_start_container {
@@ -506,15 +520,16 @@ logCapture=""
 
 [ $(check_env) -eq 1 ] && exit 1
 [ "$1" == "--help" -o -z "$1" ] && usage help
-[ "$1" == "--update-myself" ] && update_myself "$2" && exit 0
-[ "$1" == "--undo-stack" ] && print_undo_stack && exit 0
+[ "$1" == "--update-myself" ] && { update_myself "$2"; exit $?; }
+[ "$1" == "--undo-stack" ] && { print_undo_stack; exit $?; }
 
 fetch_utilities
 load_container_versions
 
+[ "$1" == "--repair-db" ] && { repair_db "$2"; exit $?; }
 [ "$1" == "--update-containers" ] && { update_containers_except_mongo "$2"; exit $?; }
-[ "$1" == "--logs" ] && capture_logs "$2" && exit 0
-[ "$1" == "--backup" ] && backup_mongo $FQHN && exit $?
+[ "$1" == "--logs" ] && { capture_logs "$2"; exit $?; }
+[ "$1" == "--backup" ] && { backup_mongo $FQHN; exit $?; }
 if [ "$1" == "--restore" ]; then
 	[ "$2" == latest ] && { restore_mongo $FQHN "$(/bin/ls ~/.codestream/backups/dump_*.gz | tail -1)"; exit $?; }
 	restore_mongo $FQHN $2
