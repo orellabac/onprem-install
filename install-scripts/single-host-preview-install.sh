@@ -3,27 +3,34 @@
 function usage {
 	local cmd=`basename $0`
 	echo "
-usage:
+Usage:
+
     $cmd --help
     $cmd [-M] -a { install | start | stop | reset | status | start_mongo }
-    $cmd --logs {Nh | Nm}                 # collect last N hours or minutes of logs
-    $cmd --update-containers [--no-start] # grab latest container versions (performs backup)
-    $cmd --update-myself                  # update the single-host-preview-install.sh script [and utilities]
-    $cmd --backup                         # backup mongo database
-    $cmd --restore {latest | <file>}      # restore mongo database from latest backup or <file>
-    $cmd --repair-db <repair-script.js>   # run mongo repair commands
-    $cmd --undo-stack                     # print the undo stack
+
+    $cmd --apply-support-pkg <support-pkg>   # apply the codestream-provided support package
+    $cmd --backup                            # backup mongo database
+    $cmd --logs {Nh | Nm}                    # collect last N hours or minutes of logs
+    $cmd --repair-db <repair-script.js>      # run mongo repair commands
+    $cmd --restore {latest | <file>}         # restore mongo database from latest backup or <file>
+    $cmd --run-support-script <script>       # run a support script located in ~/.codestream/support/
+    $cmd --undo-stack                        # print the undo stack
+    $cmd --update-containers [--no-start]    # grab latest container versions (performs backup)
+    $cmd --update-myself                     # update the single-host-preview-install.sh script and utilities
 "
+    # $cmd --function-doc                   # print function definitions
 	if [ "$1" == help ]; then
 		echo "
-    Initialization of CodeStream and container control (-a)
-        install   create the config file and prepare the CodeStream environment
-        start     run or start the CodeStream containers
-        stop      stop the CodeStream containers
-        reset     stop and remove the containers
-                  *** mongo data _should_ persist a mongo container reset, but ***
-                  *** make sure you back up the data with --backup first.      ***
-        status    check the docker status of the containers
+Initialization of CodeStream and container control (-a)
+
+    install   create the config file and prepare the CodeStream environment
+    start     run or start the CodeStream containers
+    status    check the docker status of the containers
+    stop      stop the CodeStream containers
+    reset     stop and remove the containers
+
+        >>>  mongo data _should_ persist a mongo container reset, but  <<<
+        >>>  make sure you back up the data with --backup beforehand   <<<
 
     Note: specify -M or set environment variable CS_MONGO_CONTAINER=ignore to exclude
     mongo when running the commands above
@@ -32,7 +39,9 @@ usage:
 	exit 1
 }
 
+#-
 function check_env {
+#-  check for core commands this script needs to work
 	local rc=0
 	[ -z "$HOME" ] && echo "\$HOME is not defined" >&2 && rc=1
 	[ -z `which docker 2>/dev/null` ] && echo "'docker' command not found in search path" >&2 && rc=1
@@ -42,7 +51,11 @@ function check_env {
 	echo $rc
 }
 
+#-
 function fetch_utilities {
+#-  download designated utility scripts if they do not exist
+#-  args:
+#-      force-flag       non-null string to force a download
 	local force_fl="$1"
 	[ ! -d ~/.codestream/util ] && mkdir ~/.codestream/util
 	for u in dt-merge-json
@@ -56,14 +69,26 @@ function fetch_utilities {
 	done
 }
 
+#-
 function update_myself {
+#-  download the latest version of this script in place (calls 'exit')
 	fetch_utilities --force
 	(
 		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o ~/.codestream/single-host-preview-install.sh -s
 		chmod +x ~/.codestream/single-host-preview-install.sh
 	)
+	# this is special - WE GO NO FURTHER AFTER UPDATING OURSELF
 	exit 0
 }
+
+#-
+function print_function_definitions {
+#-  print brief help on shell function definitions
+	echo "> $0"
+	egrep -e '^(function|#-)$' $0
+	return 0
+}
+
 
 # returns:
 #   0   successfully updated
@@ -116,6 +141,36 @@ function update_config_file {
 		exit 1
 	fi
 	/bin/mv -f ~/.codestream/codestream-services-config.json.new ~/.codestream/codestream-services-config.json
+}
+
+#-
+function apply_support_package {
+#-  apply a codestream-supplied support package
+#-  args:
+#-      support-pkg    a tarball supplied by CodeStream support
+	local supportPkg=$1
+	local curDir=`pwd`
+	[ -z "$supportPkg" ] && echo "support pacakge filename is required" && return 1
+	[ ! -f "$supportPkg" ] && echo "$supportPkg not found" && return 1
+	[ ! -d ~/.codestream/support ] && { mkdir ~/.codestream/support || return 1; }
+	local supportId=`date +%Y%m%d.%H%M%S.%s`
+	echo "mkdir ~/.codestream/support/$supportId" && mkdir ~/.codestream/support/$supportId || return 1
+	cd ~/.codestream/support/$supportId || return 1
+	tar -xzf $supportPkg || { echo "untar failed" && return 1; }
+	[ ! -f start-here.sh ] && echo "missing start script" && return 1
+	/bin/bash ./start-here.sh
+	return $?
+}
+
+#--v ~/.codestream:/opt/config
+function run_support_script {
+	local script_name=$1
+	[ -z "$script_name" ] && "script name required" && return 1
+	script_name=`basename $script_name`
+	[ ! -d ~/.codestream/support ] && { mkdir ~/.codestream/support || return 1; }
+	[ ! -f ~/.codestream/support/$script_name ] && { echo "~/.codestrea,/support/$script_name not found" && return 1; }
+	docker run --rm -v ~/.codestream:/opt/config --network=host teamcodestream/api-onprem:$apiDockerVersion node /opt/config/support/`basename $script_name`
+	return $?
 }
 
 function update_containers_except_mongo {
@@ -520,12 +575,15 @@ logCapture=""
 
 [ $(check_env) -eq 1 ] && exit 1
 [ "$1" == "--help" -o -z "$1" ] && usage help
+[ "$1" == "--function-doc" ] && { print_function_definitions; exit 0; }
 [ "$1" == "--update-myself" ] && { update_myself "$2"; exit $?; }
 [ "$1" == "--undo-stack" ] && { print_undo_stack; exit $?; }
+[ "$1" == "--apply-support-pkg" ] && { apply_support_package "$2"; exit $?; }
 
 fetch_utilities
 load_container_versions
 
+[ "$1" == "--run-support-script" ] && { run_support_script "$2"; exit $?; }
 [ "$1" == "--repair-db" ] && { repair_db "$2"; exit $?; }
 [ "$1" == "--update-containers" ] && { update_containers_except_mongo "$2"; exit $?; }
 [ "$1" == "--logs" ] && { capture_logs "$2"; exit $?; }
