@@ -65,7 +65,9 @@ container services and maintenance functions.
     $ ./single-host-preview-install.sh -a install
     ```
 
-1. Update the *emailDeliveryService.NodeMailer* section of the config file to
+1. Note that this step is only needed if you do NOT intend to use CodeStream's Slack or MS Teams integrations.
+
+   Update the *emailDeliveryService.NodeMailer* section of the config file to
    work with the SMTP mailer of your choice.  If you want to send email out via
    a **GMail** or **G-Suite** account, set the following properties:
     ```
