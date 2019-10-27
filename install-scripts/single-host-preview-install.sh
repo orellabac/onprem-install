@@ -510,6 +510,9 @@ function capture_logs {
 }
 
 function install_and_configure {
+	local answerYes=$1
+	echo "ANSWERYES=$answerYes"
+
 	[ -f ~/.codestream/codestream-services-config.json ] && echo "~/.codestream/codestream-services-config.json already exists!">&2 && exit 1
 
 	echo -n "
@@ -525,7 +528,7 @@ files placed in it.  Everything else will be inside of docker containers and/or
 docker volumes.
 
 Press ENTER when you are ready to proceed..."
-	read
+	[ $answerYes -ne 1 ] && read
 
 	[ ! -d ~/.codestream ] && echo "creating ~/.codestream" && mkdir ~/.codestream
 	[ ! -f ~/.codestream/single-host-preview-minimal-cfg.json.template ] && get_config_file_template
@@ -534,20 +537,25 @@ Press ENTER when you are ready to proceed..."
 	echo
 	echo "Copy your 3 SSL certificate files (cert, key and CA bundle) to ~/.codestream/".
 	echo
-	echo -n "When you've done so, press ENTER to continue..."; read
+	echo -n "When you've done so, press ENTER to continue..."
+	[ $answerYes -ne 1 ] && read || echo
 
 	load_config_cache
 	doLoop=1
 	while [ $doLoop -eq 1 ]
 	do
-		edit_config_vars
-		echo
+		[ $answerYes -ne 1 ] && { edit_config_vars; echo; }
 		validate_config_vars
 		if [ $? -eq 0 ]; then
 			print_config_vars
-			yesno "Are these values ok (y/n)? "
-			[ $? -eq 1 ] && doLoop=0
+			if [ $answerYes -ne 1 ]; then
+				yesno "Are these values ok (y/n)? "
+				[ $? -eq 1 ] && doLoop=0
+			else
+				doLoop=0
+			fi
 		else
+			[ $answerYes -eq 1 ] && echo "vars invalid and not in interactive mode. Bye" >&2 && exit 1
 			echo
 		fi
 	done
@@ -594,10 +602,12 @@ if [ "$1" == "--restore" ]; then
 	exit $?
 fi
 
+answerYes=0
 # while getopts "ca:ML:" arg
-while getopts "a:ML:" arg
+while getopts "ya:ML:" arg
 do
 	case $arg in
+		y) answerYes=1;;
 		L) capture_logs $OPTARG; exit 0;;
 		c) runMode=dockerCompose;;
 		M) runMongo=0;;
@@ -613,7 +623,7 @@ shift `expr $OPTIND - 1`
 
 case $action in
 	install)
-		install_and_configure;;
+		install_and_configure $answerYes;;
 	reset)
 		echo "Stopping and removing codestream containers..."
 		stop_containers
