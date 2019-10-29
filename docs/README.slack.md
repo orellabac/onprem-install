@@ -11,8 +11,8 @@ To connect CodeStream to Slack, complete the following steps.
       Changes" button.
     * Also on the **OAuth & Permissions** page, in the **Redirect URL's**
       section, add the URL
-      **https://my-codestream-proxy.my-company.com/no-auth/provider-token/slack**
-      and press the "Save URLs" button (substitute your public facing hostname
+      `https://<your-codestream-host>/no-auth/provider-token/slack`
+      and press the "Save URLs" button (substitute your codestream hostname
       here).
     * On the **Basic Information** page, install the App into your workspace.
     * The app is now available to the workspace in which you created it. If you
@@ -41,5 +41,3 @@ To connect CodeStream to Slack, complete the following steps.
       it to your CodeStream configuration file for both properties above.
     - Copy the *slack-app-client-secret* and add it to your CodeStream
       configuration for both properties above.
-    - Set the `apiServer.authOrigin` property to
-      **"https://my-codestream-proxy.my-company.com/no-auth"**

@@ -9,7 +9,7 @@
 {
 	"apiServer": {
 		"assetEnvironment": "onprem",
-		"authOrigin": "https://my-codestream-proxy.my-company.com/no-auth",
+		"authOrigin": "https://{{FQHN}}/no-auth",
 		"callbackEnvironment": "onprem",
 		"confirmCodeExpiration": 604800000,
 		"confirmationExpiration": 86400000,

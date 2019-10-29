@@ -5,11 +5,6 @@
 which you can install and operate entirely on your own hardware (or cloud
 service provider). You only need a linux host OS running Docker.
 
-If you intend to configure Slack or MS Teams messaging, or if you plan to
-configure any integrations with other cloud service providers (such as Github,
-Atlassian, Asana, Trello, Azure DevOps, Bitbucket, Gitlab, etc...) you will need
-to provide a public-facing web proxy for OAuth callbacks from those providers.
-
 If you intend to use built-in CodeStream messaging, you will need a mail relay
 server or mail submission account that accepts email sent by the **CodeStream
 outbound email docker container**.
