@@ -1,7 +1,7 @@
 
-# CodeStream OnPrem - Single Host Preview
+# CodeStream On-Prem - Single Host Preview
 
-The single host preview of CodeStream OnPrem uses one docker container for each
+The single host preview of CodeStream On-Prem uses one docker container for each
 of the CodeStream services (there is no scaling or redundancy). All containers must run on a single docker **host**. The host must run Linux. Docker containers
 will run as a docker **host** network type.
 
@@ -23,7 +23,7 @@ You will need...
    certificate authority bundle (3 files in all). They should all be in pem
    format.
 
-1. At this time **CodeStream OnPrem** is invitation only. You will need an
+1. At this time **CodeStream On-Prem** is invitation only. You will need an
    account on [Docker Hub](https://hub.docker.com) and you will need to be
    invited to the TeamCodeStream organization. Send an email to sales@codestream.com with your docker hub ID to request access.
 
@@ -41,20 +41,13 @@ container services and maintenance functions.
     ```
 
 1. In a new terminal window, login to the docker host as the user which will run
-   the docker commands and put the **CodeStream OnPrem** installation script in
+   the docker commands and put the **CodeStream On-Prem** installation script in
    the installation directory (~/.codestream/).
     ```
     $ mkdir ~/.codestream
     $ cd ~/.codestream
     $ curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o single-host-preview-install.sh
     $ chmod +x single-host-preview-install.sh
-    ```
-
-1. If you want to run the **BETA** version of On-Prem, execute this command. You
-   should not do this unless you are working closely with CodeStream support. The
-   beta docker images are unsupported.
-    ```
-    $ echo beta > ~/.codestream/release
     ```
 
 1. Run the script to create a base configuration. It's interactive. Once this
@@ -92,7 +85,7 @@ container services and maintenance functions.
 
 [Click here for configuring 3rd Party integrations](README.integrations.md) including Slack.
 
-## Client setup for OnPrem installations
+## Client setup for On-Prem installations
 
 Before the developers in your organization sign up for CodeStream they'll need to update the settings in their IDE to point CodeStream at your OnPrem installation. [Click here for detailed instructions.](README.clientsetup.md)
 

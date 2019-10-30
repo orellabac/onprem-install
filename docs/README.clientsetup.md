@@ -1,8 +1,8 @@
-# Client Setup for OnPrem Installations
+# Client Setup for On-Prem Installations
 
-The developers in your organization will need to install the CodeStream extension in their IDE by downloading it from the appropriate marketplace (i.e.,  [VS Code](https://marketplace.visualstudio.com/items?itemName=CodeStream.codestream), [Visual Studio](https://marketplace.visualstudio.com/items?itemName=CodeStream.codestream-vs), [JetBrains](https://plugins.jetbrains.com/plugin/12206-codestream) or [Atom](https://atom.io/packages/codestream)). Before proceeding with signup though, each developer will need to update the settings in their IDE to point CodeStream at your OnPrem installation, otherwise they'll end up creating an account on CodeStream's cloud service.
+The developers in your organization will need to install the CodeStream extension in their IDE by downloading it from the appropriate marketplace (i.e.,  [VS Code](https://marketplace.visualstudio.com/items?itemName=CodeStream.codestream), [Visual Studio](https://marketplace.visualstudio.com/items?itemName=CodeStream.codestream-vs), [JetBrains](https://plugins.jetbrains.com/plugin/12206-codestream) or [Atom](https://atom.io/packages/codestream)). Before proceeding with signup though, each developer will need to update the settings in their IDE to point CodeStream at your On-Prem installation, otherwise they'll end up creating an account on CodeStream's cloud service.
 
-Below are instructions for setting the server URL for each IDE that you can distribute to the developers. Obviously, replace the sample URL with the actual server URL for your OnPrem installation. Again, it's important that developers do this after they've installed the CodeStream extension, but before they sign up.
+Below are instructions for setting the server URL for each IDE that you can distribute to the developers. Obviously, replace the sample URL with the actual server URL for your On-Prem installation. Again, it's important that developers do this after they've installed the CodeStream extension, but before they sign up.
 
 ## JetBrains
 Go to Preferences/Settings > Tools > CodeStream and paste the following in for the Server URL: https://onpremurl.com

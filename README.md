@@ -1,7 +1,7 @@
-# CodeStream OnPrem
+# CodeStream On-Prem
 
 ## Overview
-**CodeStream OnPrem** is a docker-ized version of the CodeStream Cloud services
+**CodeStream On-Prem** is a docker-ized version of the CodeStream Cloud services
 which you can install and operate entirely on your own hardware (or cloud
 service provider). You only need a linux host OS running Docker.
 
@@ -15,7 +15,7 @@ to configure mail routing (MX) to the inbound email gateway container for a mail
 domain of your choosing dedicated to this task (for example,
 **@codestream.my-company.com**).
 
-At this time, **CodeStream OnPrem** is by invitation and only available in a
+At this time, **CodeStream On-Prem** is by invitation and only available in a
 **single host preview** configuration. Send an email to
 [sales@codestream.com](mailto://sales@codestream.com) to get started.
 
