@@ -47,8 +47,8 @@ For basic connectivity to slack, complete the following steps. You will need Adm
                   "signingSecret": null,
                   "appStrictClientId": "slack-app-client-id",
                   "appStrictClientSecret": "slack-app-client-secret",
-                  "interactiveComponents": false,
-                  "signingSecret": null
+                  "strictInteractiveComponents": false,
+                  "strictSigningSecret": null
               }
           }
       }
@@ -122,8 +122,8 @@ that hostname.
                   "signingSecret": "paste-signing-secret-here",
                   "appStrictClientId": "slack-app-client-id",
                   "appStrictClientSecret": "slack-app-client-secret",
-                  "interactiveComponents": true,
-                  "signingSecret": "paste-signing-secret-here"
+                  "strictInteractiveComponents": true,
+                  "strictSigningSecret": "paste-signing-secret-here"
               }
           }
       }
