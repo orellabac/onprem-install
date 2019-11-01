@@ -93,13 +93,14 @@ that hostname.
     ssl_certificate /path/to/full/cert/chain/my-certificate-chain.pem;
     ssl_certificate_key /path/to/cert/key/my-certificate-key.pem;
 
+    // requests to this route are proxied to the CodeStream API container
     location /no-auth/provider-action/slack) {
-      #return 302 https://codestream.my-company.com/no-auth/provider-action/slack;
       resolver 10.101.0.2; // replace with ip of your host's resolver
       proxy_set_header Host codestream.my-company.com;
       proxy_pass https://codestream.my-company.com/no-auth/provider-action/slack;
     }
 
+    // everything else gets a 404
     location / {
       return 404;
     }
