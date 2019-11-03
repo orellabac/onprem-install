@@ -23,6 +23,7 @@
 			"debugOk": false,
 			"directory": "/opt/api/log"
 		},
+		"marketingSiteUrl": "https://www.codestream.com",
 		"mockMode": false,
 		"port": 443,
 		"publicApiUrl": "https://{{FQHN}}",
