@@ -9,7 +9,7 @@
 {
 	"apiServer": {
 		"assetEnvironment": "onprem",
-		"authOrigin": "https://my-codestream-proxy.my-company.com/no-auth",
+		"authOrigin": "https://{{FQHN}}/no-auth",
 		"callbackEnvironment": "onprem",
 		"confirmCodeExpiration": 604800000,
 		"confirmationExpiration": 86400000,
@@ -23,6 +23,7 @@
 			"debugOk": false,
 			"directory": "/opt/api/log"
 		},
+		"marketingSiteUrl": "https://www.codestream.com",
 		"mockMode": false,
 		"port": 443,
 		"publicApiUrl": "https://{{FQHN}}",
@@ -95,7 +96,8 @@
 	"ssl": {
 		"cafile": "/opt/config/{{SSL_CA_FILE}}",
 		"certfile": "/opt/config/{{SSL_CERT_FILE}}",
-		"keyfile": "/opt/config/{{SSL_KEY_FILE}}"
+		"keyfile": "/opt/config/{{SSL_KEY_FILE}}",
+		"requireStrictSSL": false
 	},
 	"storage": {
 		"mongo": {
