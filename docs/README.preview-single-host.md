@@ -2,34 +2,39 @@
 # CodeStream On-Prem - Single Host Preview
 
 The single host preview of CodeStream On-Prem uses one docker container for each
-of the CodeStream services (there is no scaling or redundancy). All containers must run on a single docker **host**. The host must run Linux. Docker containers
-will run as a docker **host** network type.
+of the CodeStream services (there is no scaling or redundancy). All containers
+must run on a single linux host OS running docker. Docker containers will be
+launched using the **network=host** parameter.
 
 This has been tested on Amazon Linux AMI (RedHat, CentOS, Fedora, ...).
 
 
 ## Check the prerequisites
 You will need...
-1. A linux server with docker installed and running. It should have the
-   `docker-compose` and `curl` commands available as well. Make sure the system
-   user account you intend to use for running CodeStream is able to run docker
-   commands.  The fully qualified hostname of the linux server should be
-   resolvable in DNS and you'll need it for the installation.
+1. A linux host OS (server or virtual machine) with [docker installed and
+   running](https://runnable.com/docker/install-docker-on-linux).
+    * It should have the `curl` command available
+    * Make sure the system user account you intend to use for running CodeStream
+      is able to run docker commands without **sudo**.
+    * The fully qualified hostname should be resolvable for both the server
+      itself and any clients or services that will connect to it, for example
+      `codestream.my-company.com`.
    
-1. Make sure ports 443 (for api calls) and 12443 (for broadcast services) are
-   open to the IDEs and web clients running CodeStream.
+1. Open ports 443 (for api calls) and 12443 (for broadcast services) to the
+   client IDEs & the server itself (loopback).
 
-1. A valid SSL wildcard certificate along with it's corresponding key and
+1. Get a valid SSL wildcard certificate along with it's corresponding key and
    certificate authority bundle (3 files in all). They should all be in pem
-   format.
+   format. CodeStream requires secure communication (https).
 
 1. At this time **CodeStream On-Prem** is invitation only. You will need an
    account on [Docker Hub](https://hub.docker.com) and you will need to be
-   invited to the TeamCodeStream organization. Send an email to sales@codestream.com with your docker hub ID to request access.
+   invited to the TeamCodeStream organization. Send an email to
+   sales@codestream.com with your docker hub ID to request access.
 
 To simplify the initial configuration, there is a **bash** script that will take
-you through the configuration process. You can also use it to control the
-container services and maintenance functions.
+you through the installation. You'll also use it to control the containers and
+perform maintenance functions.
 
 ----
 ## Install the config script and create the configuration file
@@ -58,36 +63,17 @@ container services and maintenance functions.
     $ ./single-host-preview-install.sh -a install
     ```
 
-1. Note that this step is only needed if you do NOT intend to use CodeStream's Slack or MS Teams integrations.
+1. Perform the [outbound email gateway setup steps](README.email.md) if you
+   intend to create On-Prem accounts or you want email notifications. This is
+   optional if you intend to use Slack or MS Teams for authentication.
 
-   Update the *emailDeliveryService.NodeMailer* section of the config file to
-   work with the SMTP mailer of your choice.  If you want to send email out via
-   a **GMail** or **G-Suite** account, set the following properties:
-    ```
-    "NodeMailer": {
-        "service": "gmail",
-        "host": "smtp.gmail.com",
-        "port": "587",
-        "username": "",  // Your GMail or G-Suite account email address (required)
-        "password": "",  // Your GMail or G-Suite account password (required, plain text)
-        "emailTo": ""    // if you want all mail diverted to a single address, enter it here (optional)
-    }
-    ```
-    You must also configure your **GMail** or **G-Suite** account to allow
-    less secure apps to access it. See this page for instructions on how
-    to do that: https://support.google.com/accounts/answer/6010255 .
+1. Follow the [configure integrations](README.integrations.md) if you intend to
+   use Slack for authentication or as a messaging platform.
 
-    For further information on other configurations see the **NodeMailer**
-    documentation at https://www.npmjs.com/package/nodemailer .
-
-
-## Complete any optional configuration settings
-
-[Click here for configuring 3rd Party integrations](README.integrations.md) including Slack.
-
-## Client setup for On-Prem installations
-
-Before the developers in your organization sign up for CodeStream they'll need to update the settings in their IDE to point CodeStream at your OnPrem installation. [Click here for detailed instructions.](README.clientsetup.md)
+1. Inform your developers they'll need to change the default settings in their
+   respective client IDE's to point them to your On-Prem version. The default
+   behavior will have them pointing to CodeStream Cloud. Instructions for
+   the supported IDE types [can be found here](README.clientsetup.md).
 
 
 ---------
