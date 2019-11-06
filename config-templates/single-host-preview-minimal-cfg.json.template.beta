@@ -97,7 +97,7 @@
 		"cafile": "/opt/config/{{SSL_CA_FILE}}",
 		"certfile": "/opt/config/{{SSL_CERT_FILE}}",
 		"keyfile": "/opt/config/{{SSL_KEY_FILE}}",
-		"requireStrictSSL": true
+		"requireStrictSSL": false
 	},
 	"storage": {
 		"mongo": {
