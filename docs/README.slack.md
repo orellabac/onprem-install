@@ -36,19 +36,23 @@ For basic connectivity to slack, complete the following steps. You will need Adm
       matter.
 
 - Update your CodeStream services configuration file.
-    * Add the following section to your config file:
+    * Add the following section to your config file; _make sure you add your
+      app's client id, client secret and signing secret for all 3 categories
+      (app, appSharing & appStrict)_.
       ```
       "integrations": {
           "slack": {
               "slack.com": {
-                  "appClientId": "slack-app-client-id",
-                  "appClientSecret": "slack-app-client-secret",
-                  "interactiveComponents": false,
-                  "signingSecret": null,
-                  "appStrictClientId": "slack-app-client-id",
-                  "appStrictClientSecret": "slack-app-client-secret",
-                  "strictInteractiveComponents": false,
-                  "strictSigningSecret": null
+                  "appClientId": "<your-slack-app-client-id>",
+                  "appClientSecret": "<your-slack-app-client-secret>",
+                  "appSharingClientId": "<your-slack-app-client-id>",
+                  "appSharingClientSecret": "<your-slack-app-client-secret>",
+                  "appSharingSigningSecret": null,
+                  "appSigningSecret": null,
+                  "appStrictClientId": "<your-slack-app-client-id>",
+                  "appStrictClientSecret": "<your-slack-app-client-secret>",
+                  "appStrictSigningSecret": null,
+                  "interactiveComponentsEnabled": false
               }
           }
       }
@@ -112,19 +116,22 @@ that hostname.
    **App Credentials** section. Copy the signing secret.
 
 1. Add the signing secret to the Slack configuration section in your codestream
-   config file.
+   config file. _Make sure you add your app's client id, client secret and
+   signing secret for all 3 categories (app, appSharing & appStrict)_.
   ```
       "integrations": {
           "slack": {
               "slack.com": {
-                  "appClientId": "slack-app-client-id",
-                  "appClientSecret": "slack-app-client-secret",
-                  "interactiveComponents": true,
-                  "signingSecret": "paste-signing-secret-here",
-                  "appStrictClientId": "slack-app-client-id",
-                  "appStrictClientSecret": "slack-app-client-secret",
-                  "strictInteractiveComponents": true,
-                  "strictSigningSecret": "paste-signing-secret-here"
+                  "appClientId": "<your-slack-app-client-id>",
+                  "appClientSecret": "<your-slack-app-client-secret>",
+                  "appSharingClientId": "<your-slack-app-client-id>",
+                  "appSharingClientSecret": "<your-slack-app-client-secret>",
+                  "appSharingSigningSecret": "<your-slack-app-signing-secret>",
+                  "appSigningSecret": "<your-slack-app-signing-secret>",
+                  "appStrictClientId": "<your-slack-app-client-id>",
+                  "appStrictClientSecret": "<your-slack-app-client-secret>",
+                  "appStrictSigningSecret": "<your-slack-app-signing-secret>",
+                  "interactiveComponentsEnabled": true
               }
           }
       }
