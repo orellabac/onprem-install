@@ -15,7 +15,7 @@ Usage:
     $cmd --restore {latest | <file>}         # restore mongo database from latest backup or <file>
     $cmd --run-support-script <script>       # run a support script located in ~/.codestream/support/
     $cmd --undo-stack                        # print the undo stack
-    $cmd --update-containers [--no-start]    # grab latest container versions (performs backup)
+    $cmd --update-containers [--no-start] [--no-backup]  # grab latest container versions (performs backup)
     $cmd --update-myself                     # update the single-host-preview-install.sh script and utilities
 "
     # $cmd --function-doc                   # print function definitions
@@ -174,11 +174,15 @@ function run_support_script {
 }
 
 function update_containers_except_mongo {
-	local nostart="$1"
+	local parm nostart nobackup
+	for parm in $*; do
+		[ $parm == "--no-start" ] && nostart=1
+		[ $parm == "--no-backup" ] && nobackup=1
+	done
 	local undoId=$(undo_stack_id "" "full container update procedure")
 	backup_dot_codestream $undoId
 	stop_containers 0
-	backup_mongo $FQHN $undoId || exit 1
+	[ -z "$nobackup" ] && { backup_mongo $FQHN $undoId || exit 1; }
 	remove_containers 0
 	update_container_versions $undoId
 	local rc=$?
@@ -593,7 +597,7 @@ load_container_versions
 
 [ "$1" == "--run-support-script" ] && { run_support_script "$2"; exit $?; }
 [ "$1" == "--repair-db" ] && { repair_db "$2"; exit $?; }
-[ "$1" == "--update-containers" ] && { update_containers_except_mongo "$2"; exit $?; }
+[ "$1" == "--update-containers" ] && shift && { update_containers_except_mongo $*; exit $?; }
 [ "$1" == "--logs" ] && { capture_logs "$2"; exit $?; }
 [ "$1" == "--backup" ] && { backup_mongo $FQHN; exit $?; }
 if [ "$1" == "--restore" ]; then
