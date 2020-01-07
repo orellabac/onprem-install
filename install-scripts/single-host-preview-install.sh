@@ -134,7 +134,7 @@ function update_config_file {
 	cp -p ~/.codestream/codestream-services-config.json ~/.codestream/.undo/$undoId/codestream-services-config.json
 	get_config_file_template $undoId
 	# update config file with new template data
-	run_python_script /cs/util/dt-merge-json --existing-file /cs/.undo/$undoId/codestream-services-config.json --new-file /cs/single-host-preview-minimal-cfg.json.template >~/.codestream/codestream-services-config.json.new
+	run_python_script /cs/util/dt-merge-json --existing-file /cs/.undo/$undoId/codestream-services-config.json --onprem-update-mode --new-file /cs/single-host-preview-minimal-cfg.json.template >~/.codestream/codestream-services-config.json.new
 	if [ $rc -ne 0 -o ! -s ~/.codestream/codestream-services-config.json.new ]; then
 		echo "There was a problem updating the config file!!!" >&2
 		/bin/rm -f ~/.codestream/codestream-services-config.json.new

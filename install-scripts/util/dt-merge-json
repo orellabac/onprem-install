@@ -10,6 +10,15 @@ sys.path.append(os.environ['DT_TOP'] + "/lib")
 import sysUtils as su
 
 
+def updateSegmentWebToken(outCfg, newCfg):
+	for k in ['webToken', 'token']:
+		if k not in outCfg['telemetry']['segment']:
+			outCfg['telemetry']['segment'][k] = ""
+	if not outCfg['telemetry']['segment']['webToken'] and outCfg['telemetry']['segment']['token']:
+		outCfg['telemetry']['segment']['webToken'] = newCfg['telemetry']['segment']['webToken']
+		print(f"updating telemetry.segment.webToken to {newCfg['telemetry']['segment']['webToken']}")
+
+
 def debugMsg(msg, spaces):
 	if args.debug:
 		su.printErr(f"{spaces}{msg}")
@@ -45,13 +54,20 @@ def addProps(out, cur, new, spaces=""):
 parser = argparse.ArgumentParser(description="merge json files")
 parser.add_argument('--existing-file', type=str, required=True, help="json to update")
 parser.add_argument('--new-file', type=str, required=True, help="new json data")
+parser.add_argument('--keep-header-comments-from-new-file', action='store_true', default=False, help="preserve comments at top of new file in output")
+parser.add_argument('--onprem-update-mode', action='store_true', default=False, help="for updating config for onprem installations")
 parser.add_argument('--debug', action='store_true', default=False, help="debug msgs")
 # parser.add_argument('--algo', type=str, required=True, choices=['add-props'], help="merge algorythm")
 args = parser.parse_args()
 
 curCfg = su.readJsonFileIgnoreComments(args.existing_file)
 newCfg = su.readJsonFileIgnoreComments(args.new_file)
+if args.keep_header_comments_from_new_file:
+	comments = su.shellExecNoBuffer(f"grep '^//' {args.new_file}", returnOutputIfSuccess=True, noStrip=True)
+	print(comments)
 outCfg = {}
 addProps(outCfg, curCfg, newCfg)
+if args.onprem_update_mode:
+	updateSegmentWebToken(outCfg, newCfg)
 su.dumpDictOpts(outCfg, tab_indent=True)
 exit(0)
