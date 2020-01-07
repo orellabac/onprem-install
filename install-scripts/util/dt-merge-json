@@ -16,7 +16,7 @@ def updateSegmentWebToken(outCfg, newCfg):
 			outCfg['telemetry']['segment'][k] = ""
 	if not outCfg['telemetry']['segment']['webToken'] and outCfg['telemetry']['segment']['token']:
 		outCfg['telemetry']['segment']['webToken'] = newCfg['telemetry']['segment']['webToken']
-		print(f"updating telemetry.segment.webToken to {newCfg['telemetry']['segment']['webToken']}")
+		su.printErr(f"updating telemetry.segment.webToken to {newCfg['telemetry']['segment']['webToken']}")
 
 
 def debugMsg(msg, spaces):
@@ -69,5 +69,10 @@ outCfg = {}
 addProps(outCfg, curCfg, newCfg)
 if args.onprem_update_mode:
 	updateSegmentWebToken(outCfg, newCfg)
+	# if onprem installation is using self-signed ssl certs, there may not be a 'cafile' property.
+	# We do not want to update the config and add the template's initial value in that case.
+	if outCfg['ssl']['cafile'] == "/opt/config/{{SSL_CA_FILE}}":
+		del outCfg['ssl']['cafile']
+		su.printErr("ssl.cafile not relevant - removed")
 su.dumpDictOpts(outCfg, tab_indent=True)
 exit(0)
