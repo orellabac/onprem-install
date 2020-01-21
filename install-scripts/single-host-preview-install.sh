@@ -149,6 +149,7 @@ function apply_support_package {
 #-  args:
 #-      support-pkg    a tarball supplied by CodeStream support
 	local supportPkg=$1
+	shift
 	local curDir=`pwd`
 	[ -z "$supportPkg" ] && echo "support pacakge filename is required" && return 1
 	[ ! -f "$supportPkg" ] && echo "$supportPkg not found" && return 1
@@ -158,7 +159,8 @@ function apply_support_package {
 	cd ~/.codestream/support/$supportId || return 1
 	tar -xzf $supportPkg || { echo "untar failed" && return 1; }
 	[ ! -f start-here.sh ] && echo "missing start script" && return 1
-	/bin/bash ./start-here.sh
+	echo running package - /bin/bash ./start-here.sh "$@"
+	/bin/bash ./start-here.sh "$@"
 	return $?
 }
 
@@ -168,7 +170,7 @@ function run_support_script {
 	[ -z "$script_name" ] && "script name required" && return 1
 	script_name=`basename $script_name`
 	[ ! -d ~/.codestream/support ] && { mkdir ~/.codestream/support || return 1; }
-	[ ! -f ~/.codestream/support/$script_name ] && { echo "~/.codestrea,/support/$script_name not found" && return 1; }
+	[ ! -f ~/.codestream/support/$script_name ] && { echo "~/.codestream/support/$script_name not found" && return 1; }
 	docker run --rm -v ~/.codestream:/opt/config --network=host teamcodestream/api-onprem:$apiDockerVersion node /opt/config/support/`basename $script_name`
 	return $?
 }
@@ -288,6 +290,7 @@ function container_state {
 }
 
 function repair_db {
+	# this will execute scripts containing mongodb commands
 	local fixScript=$1
 	[ -z "$fixScript" ] && echo "name of fix script is required" && return 1
 	fixScript=$(basename $fixScript)
@@ -590,7 +593,7 @@ logCapture=""
 [ "$1" == "--function-doc" ] && { print_function_definitions; exit 0; }
 [ "$1" == "--update-myself" ] && { update_myself "$2"; exit $?; }
 [ "$1" == "--undo-stack" ] && { print_undo_stack; exit $?; }
-[ "$1" == "--apply-support-pkg" ] && { apply_support_package "$2"; exit $?; }
+[ "$1" == "--apply-support-pkg" ] && shift && { apply_support_package "$@"; exit $?; }
 
 fetch_utilities
 load_container_versions
