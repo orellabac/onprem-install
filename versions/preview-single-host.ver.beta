@@ -1,7 +1,7 @@
 apiDockerVersion="1.21.30-1702"
 broadcasterDockerVersion="1.0.1-7"
 dtPython3DockerVersion="0.0.0"
-mailoutDockerVersion="0.5.9-13"
+mailoutDockerVersion="0.5.9-14"
 mailoutRepo="teamcodestream/mailout-onprem-dev"
 mongoDockerVersion="3.4.9"
 rabbitDockerVersion="0.0.0"
