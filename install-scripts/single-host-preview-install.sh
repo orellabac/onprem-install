@@ -122,7 +122,7 @@ function load_container_versions {
 	[ -z "$apiRepo" ] && apiRepo="teamcodestream/api-onprem"
 	[ -z "$broadcasterRepo" ] && broadcasterRepo="teamcodestream/broadcaster-onprem"
 	[ -z "$mailoutRepo" ] && mailoutRepo="teamcodestream/mailout-onprem"
-	[ -z "$rabbitmqRepo" ] && rabbitRepo="teamcodestream/rabbitmq-onprem"
+	[ -z "$rabbitmqRepo" ] && rabbitmqRepo="teamcodestream/rabbitmq-onprem"
 	[ -z "$pythonRepo" ] && pythonRepo="teamcodestream/dt-python3"
 }
 
