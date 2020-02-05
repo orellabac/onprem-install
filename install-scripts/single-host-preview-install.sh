@@ -17,6 +17,7 @@ Usage:
     $cmd --undo-stack                        # print the undo stack
     $cmd --update-containers [--no-start] [--no-backup]  # grab latest container versions (performs backup)
     $cmd --update-myself                     # update the single-host-preview-install.sh script and utilities
+    $cmd --run-python-script <script> <opts> # run a python script using the codestream container
 "
     # $cmd --function-doc                   # print function definitions
 	if [ "$1" == help ]; then
@@ -593,7 +594,7 @@ runMode=individual
 action=""
 versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
 [ -f ~/.codestream/release ] && releaseSufx=".`cat ~/.codestream/release`" || releaseSufx=""  #eg. 'beta'
-[ -n "$releaseSufx" ] && echo "Running $releaseSufx release of CodeStream"
+[ -n "$releaseSufx" ] && echo "Running $releaseSufx release of CodeStream" >&2
 logCapture=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 || runMongo=1
 [ -f ~/.codestream/config-cache ] && . ~/.codestream/config-cache
@@ -608,6 +609,7 @@ logCapture=""
 fetch_utilities
 load_container_versions
 
+[ "$1" == "--run-python-script" ] && { shift; run_python_script "$@"; exit $?; }
 [ "$1" == "--run-support-script" ] && { run_support_script "$2"; exit $?; }
 [ "$1" == "--repair-db" ] && { repair_db "$2"; exit $?; }
 [ "$1" == "--update-containers" ] && shift && { update_containers_except_mongo $*; exit $?; }
