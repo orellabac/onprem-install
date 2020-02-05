@@ -5,6 +5,7 @@
 import os
 import sys
 import argparse
+import copy
 
 sys.path.append(os.environ['DT_TOP'] + "/lib")
 import sysUtils as su
@@ -25,14 +26,14 @@ def debugMsg(msg, spaces):
 
 
 # add new properties from the template that are not in the current file
-def addProps(out, cur, new, spaces=""):
-	debugMsg(f"addProps:\n{spaces}> cur={cur.keys()}\n{spaces}> new={new.keys()}", spaces)
+def addNonExistingProps(out, cur, new, spaces=""):
+	debugMsg(f"addNonExistingProps:\n{spaces}> cur={cur.keys()}\n{spaces}> new={new.keys()}", spaces)
 	for prop in sorted(list(dict.fromkeys(list(cur.keys()) + list(new.keys())))):
 		if (prop in cur) and (type(cur[prop]) is dict):
 			out[prop] = {}
 			newDict = new[prop] if prop in new else {}
 			debugMsg(f"prop {prop} is dict in current - Digging down in cur...", spaces)
-			addProps(out[prop], cur[prop], newDict, f"{spaces}  ")
+			addNonExistingProps(out[prop], cur[prop], newDict, f"{spaces}  ")
 		elif prop in cur:
 			# keep value from current config
 			debugMsg(f"prop {prop} is scalar in current - assigning to output config", spaces)
@@ -41,7 +42,7 @@ def addProps(out, cur, new, spaces=""):
 			# follow the dict in the new template
 			out[prop] = {}
 			debugMsg(f"prop {prop} is dict in new - Digging down in new...", spaces)
-			addProps(out[prop], {}, new[prop], f"{spaces}  ")
+			addNonExistingProps(out[prop], {}, new[prop], f"{spaces}  ")
 		elif prop in new:
 			# we have a new property from the new config
 			debugMsg(f"prop {prop} is scalar in new - assigning to output config", spaces)
@@ -51,10 +52,35 @@ def addProps(out, cur, new, spaces=""):
 			exit(1)
 
 
+def overwriteProps(out, new, spaces=""):
+	debugMsg(f"addNonExistingProps:\n{spaces}> out={out.keys()}\n{spaces}> new={new.keys()}", spaces)
+	for k in list(new.keys()):
+		if type(new[k]) is not dict or k not in out:
+			debugMsg(f"{k} doesn't exist in out or it's a scalar in the new dict", spaces)
+			out[k] = new[k]
+		elif type(out[k]) is dict:
+			debugMsg(f"{k} is a dictionary in both the new and out dicts", spaces)
+			overwriteProps(out[k], new[k], f"{spaces}  ")
+		else:
+			debugMsg(f"{k} is a dict in new and a scalar in out", spaces)
+			out[k] = new[k]
+
+
+def removeNullsFromDict(d):
+	for k in list(d.keys()):
+		if type(d[k]) is dict:
+			removeNullsFromDict(d[k])
+		else:
+			if d[k] is None:
+				del d[k]
+
+
 parser = argparse.ArgumentParser(description="merge json files")
 parser.add_argument('--existing-file', type=str, required=True, help="json to update")
 parser.add_argument('--new-file', type=str, required=True, help="new json data")
 parser.add_argument('--keep-header-comments-from-new-file', action='store_true', default=False, help="preserve comments at top of new file in output")
+parser.add_argument('--overwrite-from-new', action='store_true', default=False, help="add new-file properties to existing-file")
+parser.add_argument('--remove-null', action='store_true', default=False, help="remove null properties")
 parser.add_argument('--onprem-update-mode', action='store_true', default=False, help="for updating config for onprem installations")
 parser.add_argument('--debug', action='store_true', default=False, help="debug msgs")
 # parser.add_argument('--algo', type=str, required=True, choices=['add-props'], help="merge algorythm")
@@ -66,7 +92,14 @@ if args.keep_header_comments_from_new_file:
 	comments = su.shellExecNoBuffer(f"grep '^//' {args.new_file}", returnOutputIfSuccess=True, noStrip=True)
 	print(comments)
 outCfg = {}
-addProps(outCfg, curCfg, newCfg)
+if args.overwrite_from_new:
+	outCfg = copy.deepcopy(curCfg)
+	overwriteProps(outCfg, newCfg)
+	if args.remove_null:
+		removeNullsFromDict(outCfg)
+else:
+	addNonExistingProps(outCfg, curCfg, newCfg)
+
 if args.onprem_update_mode:
 	updateSegmentWebToken(outCfg, newCfg)
 	# if onprem installation is using self-signed ssl certs, there may not be a 'cafile' property.
