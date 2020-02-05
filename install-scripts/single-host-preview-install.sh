@@ -113,7 +113,17 @@ function update_container_versions {
 function load_container_versions {
 	local undoId="$1"
 	[ ! -f ~/.codestream/container-versions ] && { update_container_versions "$undoId" "called load_container_versions()" || exit 1; }
+	apiRepo=""
+	broadcasterRepo=""
+	mailoutRepo=""
+	rabbitmqRepo=""
+	pythonRepo=""
 	. ~/.codestream/container-versions || exit 1
+	[ -z "$apiRepo" ] && apiRepo="teamcodestream/api-onprem"
+	[ -z "$broadcasterRepo" ] && broadcasterRepo="teamcodestream/broadcaster-onprem"
+	[ -z "$mailoutRepo" ] && mailoutRepo="teamcodestream/mailout-onprem"
+	[ -z "$rabbitmqRepo" ] && rabbitRepo="teamcodestream/rabbitmq-onprem"
+	[ -z "$pythonRepo" ] && pythonRepo="teamcodestream/dt-python3"
 }
 
 function get_config_file_template {
@@ -171,7 +181,7 @@ function run_support_script {
 	script_name=`basename $script_name`
 	[ ! -d ~/.codestream/support ] && { mkdir ~/.codestream/support || return 1; }
 	[ ! -f ~/.codestream/support/$script_name ] && { echo "~/.codestream/support/$script_name not found" && return 1; }
-	docker run --rm -v ~/.codestream:/opt/config --network=host teamcodestream/api-onprem:$apiDockerVersion node /opt/config/support/`basename $script_name`
+	docker run --rm -v ~/.codestream:/opt/config --network=host $apiRepo:$apiDockerVersion node /opt/config/support/`basename $script_name`
 	return $?
 }
 
@@ -280,8 +290,8 @@ function random_string {
 
 # this reports results to stdout so redirect other msgs to stderr
 function run_python_script {
-	# echo "docker run --rm  --network=host -v ~/.codestream:/cs teamcodestream/dt-python3:$dtPython3DockerVersion $*" >&2
-	docker run --rm  --network=host -v ~/.codestream:/cs teamcodestream/dt-python3:$dtPython3DockerVersion $*
+	# echo "docker run --rm  --network=host -v ~/.codestream:/cs $pythonRepo:$dtPython3DockerVersion $*" >&2
+	docker run --rm  --network=host -v ~/.codestream:/cs $pythonRepo:$dtPython3DockerVersion $*
 }
 
 function container_state {
@@ -315,13 +325,13 @@ function run_or_start_container {
 		echo docker run -d -P --network="host" --name csmongo --mount 'type=volume,source=csmongodata,target=/data' mongo:$mongoDockerVersion
 		docker run -d -P --network="host" --name csmongo --mount 'type=volume,source=csmongodata,target=/data' mongo:$mongoDockerVersion;;
 	csrabbitmq)
-		docker run -d -P --network="host" --name csrabbitmq teamcodestream/rabbitmq-onprem:$rabbitDockerVersion;;
+		docker run -d -P --network="host" --name csrabbitmq $rabbitmqRepo:$rabbitDockerVersion;;
 	csbcast)
-		docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csbcast teamcodestream/broadcaster-onprem:$broadcasterDockerVersion;;
+		docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csbcast $broadcasterRepo:$broadcasterDockerVersion;;
 	csapi)
-		docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csapi teamcodestream/api-onprem:$apiDockerVersion;;
+		docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csapi $apiRepo:$apiDockerVersion;;
 	csmailout)
-		docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csmailout teamcodestream/mailout-onprem:$mailoutDockerVersion;;
+		docker run -d -P -v ~/.codestream:/opt/config --network="host" --name csmailout $mailoutRepo:$mailoutDockerVersion;;
 	*)
 		echo "don't know how to start container $container" >&2
 		return;;
