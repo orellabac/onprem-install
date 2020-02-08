@@ -63,7 +63,7 @@ function fetch_utilities {
 	do
 		if [ ! -f ~/.codestream/$u -o -n "$force_fl" ]; then
 			# echo "Fetching $u ..."
-			curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/util/$u -o ~/.codestream/util/$u -s
+			curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/install-scripts/util/$u -o ~/.codestream/util/$u -s
 			[ $? -ne 0 ] && echo "error fetching $u" && exit 1
 			chmod 750 ~/.codestream/util/$u
 		fi
@@ -75,10 +75,10 @@ function update_myself {
 #-  download the latest version of this script in place (calls 'exit')
 	fetch_utilities --force
 	(
-		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh -o ~/.codestream/single-host-preview-install.sh -s
+		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/install-scripts/single-host-preview-install.sh -o ~/.codestream/single-host-preview-install.sh -s
 		chmod +x ~/.codestream/single-host-preview-install.sh
 	)
-	# this is special - WE GO NO FURTHER AFTER UPDATING OURSELF
+	# this is special - WE GO NO FURTHER AFTER UPDATING OURSELF BECAUSE THE BASH INTERPRETER IS LIKELY TO BARF
 	exit 0
 }
 
@@ -134,7 +134,7 @@ function get_config_file_template {
 		cp -p ~/.codestream/single-host-preview-minimal-cfg.json.template ~/.codestream/.undo/$undoId/single-host-preview-minimal-cfg.json.template
 	fi
 	echo "Fetching config file template..."
-	curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/config-templates/single-host-preview-minimal-cfg.json.template$releaseSufx -o ~/.codestream/single-host-preview-minimal-cfg.json.template || { echo "error gett config template" >&2; exit 1; }
+	curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/config-templates/single-host-preview-minimal-cfg.json.template$releaseSufx -o ~/.codestream/single-host-preview-minimal-cfg.json.template || { echo "error gett config template" >&2; exit 1; }
 	chmod 660 ~/.codestream/single-host-preview-minimal-cfg.json.template || exit 1
 }
 
@@ -592,9 +592,11 @@ the SMTP settings in the config file before you start the docker services.
 [ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
 runMode=individual
 action=""
-versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/versions/preview-single-host.ver"
-[ -f ~/.codestream/release ] && releaseSufx=".`cat ~/.codestream/release`" || releaseSufx=""  #eg. 'beta'
-[ -n "$releaseSufx" ] && echo "Running $releaseSufx release of CodeStream" >&2
+# release determines which docker repos and image versions we use (beta, pre-release or GA)
+[ -f ~/.codestream/release ] && { releaseSufx=".`cat ~/.codestream/release`"; echo "Running $releaseSufx release of CodeStream" >&2; } || releaseSufx=""
+# installation-branch determines which branch of onprem-install to use
+[ -f ~/.codestream/installation-branch ] && { installBranch="`cat ~/.codestream/installation-branch`"; echo "Installation branch is $installBranch" >&2; } || installBranch="master"
+versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/versions/preview-single-host.ver"
 logCapture=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 || runMongo=1
 [ -f ~/.codestream/config-cache ] && . ~/.codestream/config-cache
