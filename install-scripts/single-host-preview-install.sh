@@ -6,13 +6,17 @@ function usage {
 Usage:
 
     $cmd --help
+
+    Container Control
     $cmd [-M] -a { install | start | stop | reset | status | start_mongo }
 
+    Maintenance and Support
     $cmd --apply-support-pkg <support-pkg>   # apply the codestream-provided support package
     $cmd --backup                            # backup mongo database
     $cmd --logs {Nh | Nm}                    # collect last N hours or minutes of logs
     $cmd --repair-db <repair-script.js>      # run mongo repair commands
     $cmd --restore {latest | <file>}         # restore mongo database from latest backup or <file>
+    $cmd --run-api-utility <script>          # run an api utility in the API container
     $cmd --run-support-script <script>       # run a support script located in ~/.codestream/support/
     $cmd --undo-stack                        # print the undo stack
     $cmd --update-containers [--no-start] [--no-backup]  # grab latest container versions (performs backup)
@@ -39,6 +43,7 @@ Initialization of CodeStream and container control (-a)
 	fi
 	exit 1
 }
+
 
 #-
 function check_env {
@@ -183,6 +188,15 @@ function run_support_script {
 	[ ! -d ~/.codestream/support ] && { mkdir ~/.codestream/support || return 1; }
 	[ ! -f ~/.codestream/support/$script_name ] && { echo "~/.codestream/support/$script_name not found" && return 1; }
 	docker run --rm -v ~/.codestream:/opt/config --network=host $apiRepo:$apiDockerVersion node /opt/config/support/`basename $script_name`
+	return $?
+}
+
+function run_api_utility {
+	local util_name=$1
+	[ -z "$util_name" ] && "utility name required" && return 1
+	shift
+	echo docker run --rm -v ~/.codestream:/opt/config --network=host $apiRepo:$apiDockerVersion node /opt/api/api_server/bin/$util_name "$@"
+	docker run --rm -v ~/.codestream:/opt/config --network=host $apiRepo:$apiDockerVersion node /opt/api/api_server/bin/$util_name "$@"
 	return $?
 }
 
@@ -592,13 +606,30 @@ the SMTP settings in the config file before you start the docker services.
 [ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
 runMode=individual
 action=""
-# release determines which docker repos and image versions we use (beta, pre-release or GA)
-[ -f ~/.codestream/release ] && { releaseSufx=".`cat ~/.codestream/release`"; echo "Running $releaseSufx release of CodeStream" >&2; } || releaseSufx=""
-# installation-branch determines which branch of onprem-install to use
-[ -f ~/.codestream/installation-branch ] && { installBranch="`cat ~/.codestream/installation-branch`"; echo "Installation branch is $installBranch" >&2; } || installBranch="master"
-versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/versions/preview-single-host.ver"
+releaseSufx=""
+installBranch=""
 logCapture=""
 [ "$CS_MONGO_CONTAINER" == "ignore" ] && runMongo=0 || runMongo=1
+
+# --- params for all execution ---
+# while [ -n "$1" ]; do
+# 	case "$1" in
+# 	--release) releaseSufx=".$2"; echo "release=$2 (cnd line opt)" >&2; shift 2;;
+# 	--install-branch) installBranch="$2"; echo "installation branch=$2 (cmd line opt)" >&2; shift 2;;
+# 	*) break;;
+# 	esac
+# done
+
+if [ -z "$releaseSufx" ]; then
+	# release determines which docker repos and image versions we use (beta, pre-release or GA)
+	[ -f ~/.codestream/release ] && { releaseSufx=".`cat ~/.codestream/release`"; echo "Running $releaseSufx release of CodeStream" >&2; } || releaseSufx=""
+fi
+if [ -z "$installBranch" ]; then
+	# installation-branch determines which branch of onprem-install to use
+	[ -f ~/.codestream/installation-branch ] && { installBranch="`cat ~/.codestream/installation-branch`"; echo "Installation branch is $installBranch" >&2; } || installBranch="master"
+fi
+
+versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/versions/preview-single-host.ver"
 [ -f ~/.codestream/config-cache ] && . ~/.codestream/config-cache
 
 [ $(check_env) -eq 1 ] && exit 1
@@ -613,6 +644,7 @@ load_container_versions
 
 [ "$1" == "--run-python-script" ] && { shift; run_python_script "$@"; exit $?; }
 [ "$1" == "--run-support-script" ] && { run_support_script "$2"; exit $?; }
+[ "$1" == "--run-api-utility" ] && shift && { run_api_utility "$@"; exit $?; }
 [ "$1" == "--repair-db" ] && { repair_db "$2"; exit $?; }
 [ "$1" == "--update-containers" ] && shift && { update_containers_except_mongo $*; exit $?; }
 [ "$1" == "--logs" ] && { capture_logs "$2"; exit $?; }
