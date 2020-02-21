@@ -7,10 +7,10 @@ Usage:
 
     $cmd --help
 
-    Container Control
+  Container Control
     $cmd [-M] -a { install | start | stop | reset | status | start_mongo }
 
-    Maintenance and Support
+  Maintenance and Support
     $cmd --apply-support-pkg <support-pkg>   # apply the codestream-provided support package
     $cmd --backup                            # backup mongo database
     $cmd --logs {Nh | Nm}                    # collect last N hours or minutes of logs
@@ -26,7 +26,7 @@ Usage:
     # $cmd --function-doc                   # print function definitions
 	if [ "$1" == help ]; then
 		echo "
-Initialization of CodeStream and container control (-a)
+  Initialization of CodeStream and container control (-a)
 
     install   create the config file and prepare the CodeStream environment
     start     run or start the CodeStream containers
@@ -168,12 +168,24 @@ function apply_support_package {
 	shift
 	local curDir=`pwd`
 	[ -z "$supportPkg" ] && echo "support pacakge filename is required" && return 1
-	[ ! -f "$supportPkg" ] && echo "$supportPkg not found" && return 1
+	supportPkgFile=`basename $supportPkg`
+
 	[ ! -d ~/.codestream/support ] && { mkdir ~/.codestream/support || return 1; }
 	local supportId=`date +%Y%m%d.%H%M%S.%s`
-	echo "mkdir ~/.codestream/support/$supportId" && mkdir ~/.codestream/support/$supportId || return 1
-	cd ~/.codestream/support/$supportId || return 1
-	tar -xzf $supportPkg || { echo "untar failed" && return 1; }
+	local supportDir="$HOME/.codestream/support/$supportId"
+	echo "mkdir $supportDir" && mkdir $supportDir || return 1
+
+	if [ "`echo $supportPkg | grep -c ^https:`" -gt 0 ]; then
+		echo "Fetching support package with curl"
+		curl $supportPkg -o $supportDir/$supportPkgFile -s || { echo "could not download support package" && return 1; }
+	else
+		[ ! -f "$supportPkg" ] && echo "$supportPkg not found" && return 1
+		/bin/cp $supportPkg $supportDir || return 1
+	fi
+
+	cd $supportDir || return 1
+	tar -xzf $supportPkgFile || { echo "untar $supportPkgFile failed" && return 1; }
+
 	[ ! -f start-here.sh ] && echo "missing start script" && return 1
 	echo running package - /bin/bash ./start-here.sh "$@"
 	/bin/bash ./start-here.sh "$@"
