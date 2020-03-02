@@ -33,6 +33,7 @@ Usage:
     status    check the docker status of the containers
     stop      stop the CodeStream containers
     reset     stop and remove the containers
+    start_mongo  start the mongodb container only
 
         >>>  mongo data _should_ persist a mongo container reset, but  <<<
         >>>  make sure you back up the data with --backup beforehand   <<<
