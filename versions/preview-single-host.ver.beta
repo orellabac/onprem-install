@@ -1,6 +1,6 @@
 apiDockerVersion="1.21.33-1838"
 apiRepo="teamcodestream/api-onprem-dev"
-broadcasterDockerVersion="1.21.1-25"
+broadcasterDockerVersion="6.0.0-27"
 broadcasterRepo="teamcodestream/broadcaster-onprem-dev"
 dtPython3DockerVersion="0.0.0"
 mailoutDockerVersion="6.0.2-25"
