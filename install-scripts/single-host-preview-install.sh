@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#-
-#- print command line usage syntax
+# print command line usage syntax
 function usage {
 	local cmd=`basename $0`
 	echo "
@@ -10,12 +9,12 @@ Usage:
     $cmd --help
 
   Container Control
-    $cmd [-M] -a { install | start | stop | reset | status | start_mongo }
+    $cmd [-M] -a { install | start | stop | restart | reset | status | start_mongo }
 
   Maintenance and Support
     $cmd --apply-support-pkg <support-pkg>   # apply the codestream-provided support package
     $cmd --backup                            # backup mongo database
-	$cmd --create-mst-app-pkg <app-id> <public-api-host>    # create a custom MST App Package
+    $cmd --create-mst-app-pkg <app-id> <public-api-host>    # create a custom MST App Package
     $cmd --logs {Nh | Nm}                    # collect last N hours or minutes of logs
     $cmd --repair-db <repair-script.js>      # run mongo repair commands
     $cmd --restore {latest | <file>}         # restore mongo database from latest backup or <file>
@@ -26,7 +25,6 @@ Usage:
     $cmd --update-myself                     # update the single-host-preview-install.sh script and utilities
     $cmd --run-python-script <script> <opts> # run a python script using the codestream python container
 "
-    # $cmd --function-doc                   # print function definitions
 	if [ "$1" == help ]; then
 		echo "
   Initialization of CodeStream and container control (-a)
@@ -48,10 +46,35 @@ Usage:
 	exit 1
 }
 
+# prompt for a yes or no answer to a question
+#
+# args:
+#    prompt     message to display
+# returns:
+#    0   no
+#    1   yes
+function yesno {
+	local prompt=$1
+	local ans
+	echo -n "$prompt"
+	read ans
+	while [ "$ans" != "y" -a "$ans" != "n" ]; do
+		echo -n "y or n ? "
+		read ans
+	done
+	[ $ans == "y" ] && return 1
+	return 0
+}
 
-#-
-#-
-#- check for core commands this script needs to work
+# generate a random string of characters of specified length (relies on /dev/urandom)
+function random_string {
+	local strLen=$1
+	[ ! -c /dev/urandom ] && echo "the /dev/urandom device was not found - cannot generate a random string" && exit 1
+	[ -z "$strLen" ] && strLen=18
+	head /dev/urandom | $TR_CMD -dc A-Za-z0-9 | head -c $strLen ; echo ''
+}
+
+# check for core commands this script needs to work
 function check_env {
 	local rc=0
 	[ -z "$HOME" ] && echo "\$HOME is not defined" >&2 && rc=1
@@ -62,20 +85,9 @@ function check_env {
 	echo $rc
 }
 
-#-
-#-
-#- print brief help on shell function definitions
-function print_function_definitions {
-	echo "> $0"
-	egrep -e '^(function|#-)' $0 |less
-	return 0
-}
-
-#-
-#-
-#- download designated utility scripts
-#- args:
-#-     force-flag       non-null string forces download of all utilities
+# download designated utility scripts
+# args:
+#     force-flag       non-null string forces download of all utilities
 function fetch_utilities {
 	local force_fl="$1"
 	[ ! -d ~/.codestream/util ] && mkdir ~/.codestream/util
@@ -90,9 +102,7 @@ function fetch_utilities {
 	done
 }
 
-#-
-#-
-#- download the latest version of this script in place (immediately calls 'exit')
+# download the latest version of this script in place (then immediately exit)
 function update_myself {
 	fetch_utilities --force
 	(
@@ -103,12 +113,10 @@ function update_myself {
 	exit 0
 }
 
-#-
-#-
-#- uupdate the file containing the container versions for this codestream release
-#- args:
-#-     undoId (optional)     for storing existing file(s) in the undo stack
-#- returns:
+# uupdate the file containing the container versions for this codestream release
+# args:
+#     undoId (optional)     for storing existing file(s) in the undo stack
+# returns:
 #      0   successfully updated
 #      1   no update necessary
 #      2   error during update
@@ -128,6 +136,13 @@ function update_container_versions {
 	return 0
 }
 
+# source in the container version file.
+#
+# This contains the versions of each docker image to use as well as optional
+# docker hub repo names. Default repo names will be those for GA (master)
+#
+# args:
+#   undoId    optional undo stack Id
 function load_container_versions {
 	local undoId="$1"
 	[ ! -f ~/.codestream/container-versions ] && { update_container_versions "$undoId" "called load_container_versions()" || exit 1; }
@@ -144,6 +159,7 @@ function load_container_versions {
 	[ -z "$pythonRepo" ] && pythonRepo="teamcodestream/dt-python3"
 }
 
+# fetch the latest configuration file template from the onprem-install repo
 function get_config_file_template {
 	local undoId="$1"
 	if [ -f ~/.codestream/single-host-preview-minimal-cfg.json.template ]; then
@@ -155,6 +171,8 @@ function get_config_file_template {
 	chmod 660 ~/.codestream/single-host-preview-minimal-cfg.json.template || exit 1
 }
 
+# update the configuration file from the latest template using the dt-merge-json
+# utility script executed by the CodeStream pre-configured python container
 function update_config_file {
 	local undoId="$1"
 	[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called update_config_file()")
@@ -171,11 +189,11 @@ function update_config_file {
 	/bin/mv -f ~/.codestream/codestream-services-config.json.new ~/.codestream/codestream-services-config.json
 }
 
-#-
+# optionally fetch and execute a CodeStream supplied support package.
+#
+# Support packages are tarballs containing custom scripts CodeStream support
+# prepares for specific problems with client installations.
 function apply_support_package {
-#-  apply a codestream-supplied support package
-#-  args:
-#-      support-pkg    a tarball supplied by CodeStream support
 	local supportPkg=$1
 	shift
 	local curDir=`pwd`
@@ -204,9 +222,7 @@ function apply_support_package {
 	return $?
 }
 
-#-
-#-
-#- execute a shell script from the host OS via an API container
+# execute a script from the host OS disk using an API container
 function run_support_script {
 	local script_name=$1
 	[ -z "$script_name" ] && "script name required" && return 1
@@ -217,9 +233,7 @@ function run_support_script {
 	return $?
 }
 
-#-
-#-
-#- execute a utility script included with the API container
+# execute a utility script included within an API container
 function run_api_utility {
 	local util_name=$1
 	[ -z "$util_name" ] && "utility name required" && return 1
@@ -229,6 +243,7 @@ function run_api_utility {
 	return $?
 }
 
+# Execute the docker update procedure
 function update_containers_except_mongo {
 	local parm nostart nobackup
 	for parm in $*; do
@@ -252,6 +267,17 @@ function update_containers_except_mongo {
 	[ -z "$nostart" ] && start_containers 0
 }
 
+# generate an undo stack Id and creates its directory
+#
+# An undo stack Id is a top leveel directory in ~/.codestream/.undo/ where we
+# keep backups of all the files we will need to undo the current transaction.
+#
+# args:
+#     undoId      optional Id - if not provided one will be generated
+#     eventDesc   brief description of this undo transaction
+#
+# returns:
+#     prints undoId on stdout
 function undo_stack_id {
 	local undoId="$1"
 	local eventDesc="$2"
@@ -273,6 +299,7 @@ function print_undo_stack {
 	done
 }
 
+# backup the contents of the ~/.codestream directory tree into the undo stack
 function backup_dot_codestream {
 	local undoId="$1"
 	[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called backup_dot_codestream()")
@@ -313,36 +340,19 @@ function restore_mongo {
 	return 0
 }
 
-function yesno {
-	local prompt=$1
-	local ans
-	echo -n "$prompt"
-	read ans
-	while [ "$ans" != "y" -a "$ans" != "n" ]; do
-		echo -n "y or n ? "
-		read ans
-	done
-	[ $ans == "y" ] && return 1
-	return 0
-}
-
-function random_string {
-	local strLen=$1
-	[ -z "$strLen" ] && strLen=18
-	head /dev/urandom | $TR_CMD -dc A-Za-z0-9 | head -c $strLen ; echo ''
-}
-
-# this reports results to stdout so redirect other msgs to stderr
 function run_python_script {
+	# this reports results to stdout so redirect other msgs to stderr
 	# echo "docker run --rm  --network=host -v ~/.codestream:/cs $pythonRepo:$dtPython3DockerVersion $*" >&2
 	docker run --rm  --network=host -v ~/.codestream:/cs $pythonRepo:$dtPython3DockerVersion $*
 }
 
+# determine a container's state and report it on stdout
 function container_state {
 	local container=$1
 	docker inspect --format='{{.State.Status}}' $container  2>/dev/null|grep -v '^[[:blank:]]*$'
 }
 
+# use a mongo container to run a json script using the mongo CLI
 function repair_db {
 	# this will execute scripts containing mongodb commands
 	local fixScript=$1
@@ -353,6 +363,7 @@ function repair_db {
 	return 0
 }
 
+# start up a container regardless if it already exists
 function run_or_start_container {
 	local container=$1
 	local state=$(container_state $container)
@@ -382,6 +393,7 @@ function run_or_start_container {
 	esac
 }
 
+# high-level routine to startup all containers
 function start_containers {
 	local runMongoFlag=$1
 	[ -z "$runMongoFlag" ] && runMongoFlag=$runMongo
@@ -446,6 +458,14 @@ function remove_containers {
 	# [ $runMongoFlag -eq 1 ] && echo "docker rm csmongo" && docker rm csmongo
 }
 
+# report container and volume status
+function docker_status {
+	docker ps -a|egrep -e '[[:blank:]]cs|NAME'
+	echo
+	docker volume ls -f name=csmongodata
+}
+
+# create a custom MS Teams App Package for side-loading into MST
 function create_mst_app_pkg {
 	local appId=$1
 	local publicHostName=$2
@@ -462,13 +482,6 @@ function create_mst_app_pkg {
 	ls -l $codestreamRoot/codestream-mst-app.zip
 	/bin/rm -rf $tmpDir
 	return 0
-}
-
-
-function docker_status {
-	docker ps -a|egrep -e '[[:blank:]]cs|NAME'
-	echo
-	docker volume ls -f name=csmongodata
 }
 
 function load_config_cache {
@@ -673,12 +686,13 @@ logCapture=""
 # 	esac
 # done
 
+# release determines which docker repos and image versions we use (beta, pre-release or GA)
 if [ -z "$releaseSufx" ]; then
-	# release determines which docker repos and image versions we use (beta, pre-release or GA)
 	[ -f ~/.codestream/release ] && { releaseSufx=".`cat ~/.codestream/release`"; echo "Running $releaseSufx release of CodeStream" >&2; } || releaseSufx=""
 fi
+
+# installation-branch determines which branch of onprem-install to use when downloading files
 if [ -z "$installBranch" ]; then
-	# installation-branch determines which branch of onprem-install to use
 	[ -f ~/.codestream/installation-branch ] && { installBranch="`cat ~/.codestream/installation-branch`"; echo "Installation branch is $installBranch" >&2; } || installBranch="master"
 fi
 
@@ -687,7 +701,6 @@ versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$ins
 
 [ $(check_env) -eq 1 ] && exit 1
 [ "$1" == "--help" -o -z "$1" ] && usage help
-[ "$1" == "--function-doc" ] && { print_function_definitions; exit 0; }
 [ "$1" == "--update-myself" ] && { update_myself "$2"; exit $?; }
 [ "$1" == "--undo-stack" ] && { print_undo_stack; exit $?; }
 [ "$1" == "--apply-support-pkg" ] && shift && { apply_support_package "$@"; exit $?; }
@@ -710,7 +723,6 @@ if [ "$1" == "--restore" ]; then
 fi
 
 answerYes=0
-# while getopts "ca:ML:" arg
 while getopts "ya:ML:" arg
 do
 	case $arg in
@@ -723,7 +735,7 @@ do
 	esac
 done
 shift `expr $OPTIND - 1`
-[ -z "`echo $action | egrep -e '^(install|start|start_mongo|stop|reset|status)$'`" ] && echo "bad action" && usage
+[ -z "`echo $action | egrep -e '^(install|start|start_mongo|stop|restart|reset|status)$'`" ] && echo "bad action" && usage
 
 
 [ $runMongo -eq 0 ] && echo "Mongo container will not be touched (CS_MONGO_CONTAINER=ignore)"
@@ -747,6 +759,12 @@ case $action in
 		docker_status;;
 	stop)
 		stop_containers;;
+	restart)
+		stop_containers
+		sleep 1
+		start_containers
+		sleep 1
+		docker_status;;
 	*)
 		usage;;
 esac
