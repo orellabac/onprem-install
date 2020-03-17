@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#-
+#- print command line usage syntax
 function usage {
 	local cmd=`basename $0`
 	echo "
@@ -13,6 +15,7 @@ Usage:
   Maintenance and Support
     $cmd --apply-support-pkg <support-pkg>   # apply the codestream-provided support package
     $cmd --backup                            # backup mongo database
+	$cmd --create-mst-app-pkg <app-id> <public-api-host>    # create a custom MST App Package
     $cmd --logs {Nh | Nm}                    # collect last N hours or minutes of logs
     $cmd --repair-db <repair-script.js>      # run mongo repair commands
     $cmd --restore {latest | <file>}         # restore mongo database from latest backup or <file>
@@ -21,7 +24,7 @@ Usage:
     $cmd --undo-stack                        # print the undo stack
     $cmd --update-containers [--no-start] [--no-backup]  # grab latest container versions (performs backup)
     $cmd --update-myself                     # update the single-host-preview-install.sh script and utilities
-    $cmd --run-python-script <script> <opts> # run a python script using the codestream container
+    $cmd --run-python-script <script> <opts> # run a python script using the codestream python container
 "
     # $cmd --function-doc                   # print function definitions
 	if [ "$1" == help ]; then
@@ -47,8 +50,9 @@ Usage:
 
 
 #-
+#-
+#- check for core commands this script needs to work
 function check_env {
-#-  check for core commands this script needs to work
 	local rc=0
 	[ -z "$HOME" ] && echo "\$HOME is not defined" >&2 && rc=1
 	[ -z `which docker 2>/dev/null` ] && echo "'docker' command not found in search path" >&2 && rc=1
@@ -59,10 +63,20 @@ function check_env {
 }
 
 #-
+#-
+#- print brief help on shell function definitions
+function print_function_definitions {
+	echo "> $0"
+	egrep -e '^(function|#-)' $0 |less
+	return 0
+}
+
+#-
+#-
+#- download designated utility scripts
+#- args:
+#-     force-flag       non-null string forces download of all utilities
 function fetch_utilities {
-#-  download designated utility scripts if they do not exist
-#-  args:
-#-      force-flag       non-null string to force a download
 	local force_fl="$1"
 	[ ! -d ~/.codestream/util ] && mkdir ~/.codestream/util
 	for u in dt-merge-json
@@ -77,8 +91,9 @@ function fetch_utilities {
 }
 
 #-
+#-
+#- download the latest version of this script in place (immediately calls 'exit')
 function update_myself {
-#-  download the latest version of this script in place (calls 'exit')
 	fetch_utilities --force
 	(
 		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/install-scripts/single-host-preview-install.sh -o ~/.codestream/single-host-preview-install.sh -s
@@ -89,18 +104,14 @@ function update_myself {
 }
 
 #-
-function print_function_definitions {
-#-  print brief help on shell function definitions
-	echo "> $0"
-	egrep -e '^(function|#-)$' $0
-	return 0
-}
-
-
-# returns:
-#   0   successfully updated
-#   1   no update necessary
-#   2   error during update
+#-
+#- uupdate the file containing the container versions for this codestream release
+#- args:
+#-     undoId (optional)     for storing existing file(s) in the undo stack
+#- returns:
+#      0   successfully updated
+#      1   no update necessary
+#      2   error during update
 function update_container_versions {
 	local undoId="$1"
 	curl -s --fail --output ~/.codestream/container-versions.new "$versionUrl$releaseSufx"
@@ -193,7 +204,9 @@ function apply_support_package {
 	return $?
 }
 
-#--v ~/.codestream:/opt/config
+#-
+#-
+#- execute a shell script from the host OS via an API container
 function run_support_script {
 	local script_name=$1
 	[ -z "$script_name" ] && "script name required" && return 1
@@ -204,6 +217,9 @@ function run_support_script {
 	return $?
 }
 
+#-
+#-
+#- execute a utility script included with the API container
 function run_api_utility {
 	local util_name=$1
 	[ -z "$util_name" ] && "utility name required" && return 1
@@ -430,6 +446,25 @@ function remove_containers {
 	# [ $runMongoFlag -eq 1 ] && echo "docker rm csmongo" && docker rm csmongo
 }
 
+function create_mst_app_pkg {
+	local appId=$1
+	local publicHostName=$2
+	zipCmd=`which zip`
+	[ -z "$zipCmd" ] && echo "'zip' is needed to create an MST app package. It was not found in your search path" && return 1
+	[ -z "$publicHostName" ] && echo "usage: `basename $0` --create-mst-app-pkg {appId} {public-api-hostname}" && return 1
+	local tmpDir="$codestreamRoot/tmp$$"
+	mkdir $tmpDir || { echo "mkdir $tmpDir failed"; return 1; }
+	curl -s https://assets.codestream.com/mstbot/template/manifest.json.onprem -o $tmpDir/manifest.json.onprem || { echo "failed to get manifest template"; return 1; }
+	curl -s https://assets.codestream.com/mstbot/template/outline.png -o $tmpDir/outline.png || { echo "failed to get outline.png"; return 1; }
+	curl -s https://assets.codestream.com/mstbot/template/color.png -o $tmpDir/color.png || { echo "failed to get color.png"; return 1; }
+	cat $tmpDir/manifest.json.onprem | sed -e "s/{{botId}}/$appId/g" | sed -e "s/{{publicApiFullyQualifiedHostName}}/$publicHostName/g" > $tmpDir/manifest.json || { echo "could not expand manifest template"; return 1; }
+	(cd $tmpDir && $zipCmd -q $codestreamRoot/codestream-mst-app.zip manifest.json outline.png color.png) || { echo "failed to create zip file"; return 1; }
+	ls -l $codestreamRoot/codestream-mst-app.zip
+	/bin/rm -rf $tmpDir
+	return 0
+}
+
+
 function docker_status {
 	docker ps -a|egrep -e '[[:blank:]]cs|NAME'
 	echo
@@ -616,6 +651,11 @@ the SMTP settings in the config file before you start the docker services.
 }
 
 
+#########
+#########  Execution Starts Here
+#########
+
+codestreamRoot=`/bin/bash -c 'echo ~/.codestream'`
 [ `uname -s` == "Darwin" ] && TR_CMD=gtr || TR_CMD=tr
 runMode=individual
 action=""
@@ -651,6 +691,7 @@ versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$ins
 [ "$1" == "--update-myself" ] && { update_myself "$2"; exit $?; }
 [ "$1" == "--undo-stack" ] && { print_undo_stack; exit $?; }
 [ "$1" == "--apply-support-pkg" ] && shift && { apply_support_package "$@"; exit $?; }
+[ "$1" == "--create-mst-app-pkg" ] && shift && { create_mst_app_pkg "$@"; exit $?; }
 
 fetch_utilities
 load_container_versions
