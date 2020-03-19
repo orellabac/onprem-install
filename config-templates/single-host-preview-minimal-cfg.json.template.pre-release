@@ -37,6 +37,7 @@
 		"codestreamBroadcaster": {
 			"assetEnvironment": "local",
 			"host": "{{FQHN}}",
+			"ignoreHttps": false,
 			"logger": {
 				"consoleOk": true,
 				"debugOk": false,
