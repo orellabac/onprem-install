@@ -1,6 +1,6 @@
 apiDockerVersion="6.0.1-112"
 broadcasterDockerVersion="6.0.1-9"
 dtPython3DockerVersion="0.0.0"
-mailoutDockerVersion="6.0.1-20"
+mailoutDockerVersion="6.0.2-21"
 mongoDockerVersion="3.4.9"
 rabbitDockerVersion="0.0.0"
