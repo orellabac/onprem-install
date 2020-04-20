@@ -1,0 +1,16 @@
+{
+	"scripts": {
+		"clean": "/bin/rm -rf ./public ./.cache ./dist; gatsby clean",
+		"start": "gatsby develop",
+		"build": "/bin/rm -rf ./public ./.cache && gatsby build",
+		"serve": "gatsby serve",
+		"pack": "[ ! -d dist ] && mkdir dist || /bin/echo -n; tar czpf dist/codestream-onprem-docs.tgz public",
+		"deploy": "rsync -av --delete public web@tc:/cs/mnt/local/opguide"
+	},
+	"dependencies": {
+		"gatsby": "^2.20.20",
+		"gatsby-theme-apollo-docs": "^4.1.4",
+		"react": "^16.13.1",
+		"react-dom": "^16.13.1"
+	}
+}
