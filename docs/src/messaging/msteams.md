@@ -6,8 +6,9 @@ description:
 CodeStream's MST integration allows you to share your codemark comments inside
 MS Teams channels. As the integration runs as a bot service, your CodeStream API
 will need to get HTTPS requests made by Microsoft's Bot Channel Framework
-connector service (requests coming _from_ microsoft). See the [Messaging
-Integrations](https://trello.com/c/725sZVs3/3385-user-getting-scm-error-submitting-a-review) page for more details on configuring your network for this.
+connector service (requests coming _from_ microsoft). See the [network
+configuration overview](network) page for more details on configuring your
+network for this.
 
 All requests made by the Microsoft Bot Connector Service are signed and verified
 using the MS Bot Framework SDK to ensure authenticity.
@@ -30,10 +31,10 @@ passwords](https://techcommunity.microsoft.com/t5/iis-support-blog/bot-channels-
 ## Prerequisite
 
 Configure your network to route secure web requests to your CodeStream On-Prem
-API service. [More details can be found here](Messaging-Integrations). You will
-need the public facing, fully qualified hostname for your CodeStream API to
-complete the Bot Channel Registration in Azure AD. For this document, we will
-assume it's `bastion-host.my-company.com`.
+API service. [More details can be found here](network). You will need the public
+facing, fully qualified hostname for your CodeStream API to complete the Bot
+Channel Registration in Azure AD. For this document, we will assume it's
+`bastion-host.my-company.com`.
 
 ## Create a Bot Channel Registration Resource in Azure AD
 This must be completed by someone with privileges in the Azure Portal (for
@@ -78,9 +79,9 @@ Complete these steps in order:
 
    1. **Pricing Tier** - Use `S1` unless you have a reason not to.
 
-   1. **Messaging Endpoint** - This is the publicly facing URL of your CodeStream
-      On-Prem API service. If you created a proxy server as per the [Messaging
-      Integrations](Messaging-Integrations) page, you'd use
+   1. **Messaging Endpoint** - This is the publicly facing URL of your
+      CodeStream On-Prem API service. If you created a proxy server as per the
+      [network configuration overview](network) page, you'd use
       `https://bastion-host.my-company.com/no-auth/provider-action/msteams`.
 
    1. Turn **Application Insights** off
@@ -196,4 +197,4 @@ The CodeStream Bot App is now available for users to add to their channels or
 teams and to sign-in and connect to your CodeStream API.
 
 [Instructions for individuals to setup and connect to the bot service can be
-found here](/userguide/features/msteams-integration/).
+found here](https://docs.codestream.com/userguide/features/msteams-integration/).

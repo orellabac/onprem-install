@@ -1,11 +1,18 @@
 {
+	"name": "docs-onprem",
+	"version": "1.0.1",
 	"scripts": {
-		"clean": "/bin/rm -rf ./public ./.cache ./dist; gatsby clean",
-		"start": "gatsby develop",
+		"clean": "/bin/rm -rf ./public ./.cache ./dist && gatsby clean",
+		"start": "npm run develop",
+		"develop": "gatsby develop",
 		"build": "/bin/rm -rf ./public ./.cache && gatsby build",
+		"cibuild": "/bin/rm -rf ./public ./.cache && gatsby build --prefix-paths",
 		"serve": "gatsby serve",
-		"pack": "[ ! -d dist ] && mkdir dist || /bin/echo -n; tar czpf dist/codestream-onprem-docs.tgz public",
-		"deploy": "rsync -av --delete public web@tc:/cs/mnt/local/opguide"
+		"serve-final": "gatsby serve --prefix-paths",
+		"pack": "[ ! -d dist ] && mkdir dist || /bin/echo -n; mv public onprem && tar czpf dist/docs-onprem.tgz userguide && mv onprem public && ls -l dist/onprem.tgz",
+		"deploy-to-preview": "npm run cibuild && rsync -a --delete public/ web@tc:/cs/local/guide/onprem",
+		"cfdirty": "aws cloudfront create-invalidation --distribution-id E1EN2JD6OKX54H --paths /onprem",
+		"deploy-to-s3": "aws --quiet s3 sync public/ s3://docs.codestream.com/onprem/ --delete && npm run cfdirty"
 	},
 	"dependencies": {
 		"gatsby": "^2.20.20",
