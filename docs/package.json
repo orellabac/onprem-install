@@ -11,7 +11,7 @@
 		"serve-final": "gatsby serve --prefix-paths",
 		"pack": "[ ! -d dist ] && mkdir dist || /bin/echo -n; mv public onprem && tar czpf dist/docs-onprem.tgz userguide && mv onprem public && ls -l dist/onprem.tgz",
 		"deploy-to-preview": "npm run cibuild && rsync -a --delete public/ web@tc:/cs/local/guide/onprem",
-		"cfdirty": "aws cloudfront create-invalidation --distribution-id E1EN2JD6OKX54H --paths /onprem",
+		"cfdirty": "aws cloudfront create-invalidation --distribution-id E1EN2JD6OKX54H --paths '/onprem/*'",
 		"deploy-to-s3": "aws --quiet s3 sync public/ s3://docs.codestream.com/onprem/ --delete && npm run cfdirty"
 	},
 	"dependencies": {
