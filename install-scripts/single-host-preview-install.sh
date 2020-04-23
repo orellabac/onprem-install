@@ -602,6 +602,31 @@ function capture_logs {
 	ls -l ~/.codestream/log-capture/codestream-onprem-logs.$now.tgz
 }
 
+# display our terms of service and require user to agree.
+# returns 0 if they do agree, 1 otherwise
+function accept_tos {
+	local ans
+	echo -n "
+Before proceeding with the installation, you will need to accept our
+Terms of Service. Use the space-bar, 'b' (for back) or arrow keys to
+move through the pager to read the terms. Press 'q' when you're done.
+
+You'll then need agree to the terms to continue with the installation.
+
+Press ENTER to read our Terms of Service..."
+	read ans
+	curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/docs/src/assets/terms.txt -s -o ~/.codestream/terms.txt
+	[ $? -ne 0 ] && echo "Could not locate the terms of service!" && exit 1
+	less ~/.codestream/terms.txt
+	echo -n "
+
+If you agree to these terms, please type 'i agree': "
+	read ans
+	ans=`echo $ans | $TR_CMD [:upper:] [:lower:]`
+	[ "$ans" == "i agree" ] && return 0
+	return 1
+}
+
 function install_and_configure {
 	local answerYes=$1
 	echo "ANSWERYES=$answerYes"
@@ -723,11 +748,10 @@ if [ "$1" == "--restore" ]; then
 fi
 
 answerYes=0
-while getopts "ya:ML:" arg
+while getopts "ya:M" arg
 do
 	case $arg in
 		y) answerYes=1;;
-		L) capture_logs $OPTARG; exit 0;;
 		c) runMode=dockerCompose;;
 		M) runMongo=0;;
 		a) action=$OPTARG;;
@@ -742,6 +766,7 @@ shift `expr $OPTIND - 1`
 
 case $action in
 	install)
+		accept_tos || { echo "CodeStream won't be installed."; exit 1; }
 		install_and_configure $answerYes;;
 	reset)
 		echo "Stopping and removing codestream containers..."
