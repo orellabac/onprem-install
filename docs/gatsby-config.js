@@ -1,6 +1,6 @@
 
 const  { navConfig, footerNavConfig, codeStreamCfg } = require('./codestream-config');
-const thisDocModule = 'On-Prem Guide'
+const thisDocModule = 'On-Prem Administration';
 
 navConfig[thisDocModule].omitLandingPage = true;
 module.exports = {
@@ -11,7 +11,7 @@ module.exports = {
 			options: {
 				codeStreamDocModule: thisDocModule,  // this is definitely NOT ideal - see docset-menu.js
 				siteName: 'CodeStream On-Prem Guide',
-				pageTitle: 'My Page Title', // ?
+				pageTitle: 'CodeStream On-Prem Guide', // ?
 				menuTitle: codeStreamCfg.ecoSystem,
 				segmentApiKey: codeStreamCfg.segmentApiKey,
 				baseUrl: codeStreamCfg.baseUrl,
