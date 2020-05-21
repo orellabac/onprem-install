@@ -36,6 +36,9 @@ module.exports = {
 						'configs/service-overview',
 						'configs/single-host-linux',
 					],
+					SSL: [
+						'ssl/ssl'
+					],
 					Email: [
 						'email/outbound'
 					],

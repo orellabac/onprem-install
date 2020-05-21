@@ -5,6 +5,8 @@
 // - Queuing:        rabbitMQ
 // - Outbound SMTP:  NodeMailer
 // - Telemetry:      Segment production
+//
+// - environments (profiles):  default=minimal, quickstart
 
 {
 	"apiServer": {
@@ -13,11 +15,11 @@
 		"callbackEnvironment": "onprem",
 		"confirmCodeExpiration": 604800000,
 		"confirmationExpiration": 86400000,
-		"confirmationNotRequired": false,
+		"confirmationNotRequired": true,
 		"dontWantAWS": true,
 		"forgotPasswordExpiration": 86400000,
 		"helpIsAvailable": false,
-		"ignoreHttps": false,
+		"ignoreHttps": true,
 		"logger": {
 			"consoleOk": true,
 			"debugOk": false,
@@ -25,8 +27,8 @@
 		},
 		"marketingSiteUrl": "https://www.codestream.com",
 		"mockMode": false,
-		"port": 443,
-		"publicApiUrl": "https://{{FQHN}}",
+		"port": 80,
+		"publicApiUrl": "http://{{FQHN}}",
 		"runTimeEnvironment": "onprem",
 		"sessionAwayTimeout": 600000,
 		"showConfig": false,
@@ -37,13 +39,13 @@
 		"codestreamBroadcaster": {
 			"assetEnvironment": "local",
 			"host": "{{FQHN}}",
-			"ignoreHttps": false,
+			"ignoreHttps": true,
 			"logger": {
 				"consoleOk": true,
 				"debugOk": false,
 				"directory": "/opt/broadcaster/log"
 			},
-			"port": 12443,
+			"port": 12080,
 			"runTimeEnvironment": "local",
 			"secrets": {
 				"api": "{{SECRET_BROADCAST_API}}",
@@ -58,7 +60,7 @@
 		"replyToDomain": "{{FQHN}}",
 		"senderEmail": "{{SENDER_EMAIL}}",
 		"supportEmail": "{{SUPPORT_EMAIL}}",
-		"suppressEmails": false
+		"suppressEmails": true
 	},
 	"emailDeliveryService": {
 		"NodeMailer": {
@@ -69,6 +71,21 @@
 			"service": null,
 			"username": null
 		}
+	},
+	"inboundEmailServer": {
+		"assetEnvironment": "onprem",
+		"inboundEmailDirectory": "${CS_MAILIN_SANDBOX}/mailq/new",
+		"inboundEmailDisabled": true,
+		"logger": {
+			"consoleOk": true,
+			"debugOk": false,
+			"directory": "${CS_MAILIN_SANDBOX}/log"
+		},
+		"processDirectory": "${CS_MAILIN_SANDBOX}/mailq/process",
+		"runTimeEnvironment": "onprem",
+		"showConfig": false,
+		"tempAttachmentDirectory": "${CS_MAILIN_SANDBOX}/mailq/attachments",
+		"tmpDirectory": "${CS_OUTBOUND_EMAIL_SANDBOX}/tmp"
 	},
 	"outboundEmailServer": {
 		"logger": {
@@ -95,9 +112,9 @@
 		"telemetry": "84$gTe^._qHm,#D"
 	},
 	"ssl": {
-		"cafile": "/opt/config/{{SSL_CA_FILE}}",
-		"certfile": "/opt/config/{{SSL_CERT_FILE}}",
-		"keyfile": "/opt/config/{{SSL_KEY_FILE}}",
+		"cafile": null,
+		"certfile": null,
+		"keyfile": null,
 		"requireStrictSSL": false
 	},
 	"storage": {

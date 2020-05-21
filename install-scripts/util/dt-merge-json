@@ -11,10 +11,22 @@ sys.path.append(os.environ['DT_TOP'] + "/lib")
 import sysUtils as su
 
 
+# the runTimeEnvironment property has been removed from each of the service
+# sections and now exists only once in the config file under 'sharedGeneral'.
+def removeServerRunTimeEnvironments(outCfg, newCfg):
+	if 'runTimeEnvironment' in outCfg['apiServer']:
+		del outCfg['apiServer']['runTimeEnvironment']
+	if 'runTimeEnvironment' in outCfg['outboundEmailServer']:
+		del outCfg['outboundEmailServer']['runTimeEnvironment']
+	if 'runTimeEnvironment' in outCfg['broadcastEngine']['codestreamBroadcaster']:
+		del outCfg['broadcastEngine']['codestreamBroadcaster']
+
+
 def updateSegmentWebToken(outCfg, newCfg):
 	for k in ['webToken', 'token']:
 		if k not in outCfg['telemetry']['segment']:
 			outCfg['telemetry']['segment'][k] = ""
+	# if the segment token exists but the webToken is missing, set the webToken
 	if not outCfg['telemetry']['segment']['webToken'] and outCfg['telemetry']['segment']['token']:
 		outCfg['telemetry']['segment']['webToken'] = newCfg['telemetry']['segment']['webToken']
 		su.printErr(f"updating telemetry.segment.webToken to {newCfg['telemetry']['segment']['webToken']}")
@@ -53,7 +65,7 @@ def addNonExistingProps(out, cur, new, spaces=""):
 
 
 def overwriteProps(out, new, spaces=""):
-	debugMsg(f"addNonExistingProps:\n{spaces}> out={out.keys()}\n{spaces}> new={new.keys()}", spaces)
+	debugMsg(f"overwriteProps:\n{spaces}> out={out.keys()}\n{spaces}> new={new.keys()}", spaces)
 	for k in list(new.keys()):
 		if type(new[k]) is not dict or k not in out:
 			debugMsg(f"{k} doesn't exist in out or it's a scalar in the new dict", spaces)
@@ -106,12 +118,29 @@ if args.overwrite_from_new:
 else:
 	addNonExistingProps(outCfg, curCfg, newCfg)
 
+# Special work for on-prem configs
 if args.onprem_update_mode:
-	updateSegmentWebToken(outCfg, newCfg)
-	# if onprem installation is using self-signed ssl certs, there may not be a 'cafile' property.
-	# We do not want to update the config and add the template's initial value in that case.
+	# removeServerRunTimeEnvironments(outCfg, newCfg)
+
+	# if initial config does not have segment tokens in it
+	if not ('telemetry' in curCfg and 'segment' in curCfg['telemetry'] and 'token' in curCfg['telemetry']['segment']):
+		# ...and there is a token in the new one,  delete it. Otherwise make sure there's a webToken as well
+		if removeSegmentTokens and 'telemetry' in outCfg and 'segment' in outCfg['telemetry']:
+			del outCfg['telemetry']['segment']
+		else:
+			updateSegmentWebToken(outCfg, newCfg)
+
+	# if 'sharedGeneral' not in 'outCfg':
+	# 	outCfg['sharedGeneral'] = {}
+	# outCfg['sharedGeneral']['runTimeEnvironment'] = "onprem"
+
+	# don't let the template values for SSL certs get into the updated config file
 	if outCfg['ssl']['cafile'] == "/opt/config/{{SSL_CA_FILE}}":
 		del outCfg['ssl']['cafile']
-		su.printErr("ssl.cafile not relevant - removed")
+	if outCfg['ssl']['certfile'] == "/opt/config/{{SSL_CERT_FILE}}":
+		del outCfg['ssl']['certfile']
+	if outCfg['ssl']['keyfile'] == "/opt/config/{{SSL_KEY_FILE}}":
+		del outCfg['ssl']['keyfile']
+
 su.dumpDictOpts(outCfg, tab_indent=True)
 exit(0)

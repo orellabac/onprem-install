@@ -9,131 +9,92 @@ redundancy) all running on a single host. Due to limitations of docker's
 implementation on some OS's, you must use Linux for the host OS. This limitation
 is imposed due to filesystem compatibility and host based networking.
 
-## Prerequisites
+The [Quick Start](/#quick-start) instructions on the On-Prem Administration home
+page provides instructions for setting up the simplest **Single Linux Host**
+configuration.
 
-Before you begin...
-
-*  Setup a linux server or VM with
-   [docker](https://runnable.com/docker/install-docker-on-linux). You'll need to
-   be able to login to your host OS using a terminal program and you should have
-   some basic familiarity working with the command line shell.
-
-*  The host must have the `curl` command.
-
-*  Make sure the system user account you intend to use for running CodeStream
-   is able to run docker commands _without_ **sudo**.
-
-*  Ensure that IDE clients and the host OS resolve the same hostname to the same
-   IP address.
-   
-*  Obtain a valid SSL wildcard certificate (self-signed is ok) along with it's
-   corresponding key and optional certificate authority bundle (2 or 3 files in
-   all). They should all be in PEM format. At this time, CodeStream On-Prem
-   requires secure communication (HTTPS).
-
-*  Clients will connect to two of the services (containers) running on the linux
-   host OS; the **API** and the **Broadcaster**. When using an SSL certificate,
-   these services default to ports 443 and 12443 respectively so those ports
-   must be open to the clients.
-
-*  At this time **CodeStream On-Prem** is invitation only. You will need an
-   account on [Docker Hub](https://hub.docker.com) and you will need to be added
-   to the _TeamCodeStream_ organization. Send an email to
-   [sales@codestream.com](mailto:sales@codestream.com) with your Docker Hub ID
-   to request access.
+CodeStream clients (IDE extensions) make requests to the API
+service on port **80** using **HTTP** and the Broadcaster on port **12080**
+using **HTTP websockets**.
 
 
+## Extend CodeStream's Capabilities
 
-## Install the control script and create the configuration file
+Here are links to a few of the ways to extend your installation's capabilities.
 
-To simplify everything, we've created a **bash** shell script that you'll use to
-configure and manage your installation.
+*  [Add SSL Certificates](../ssl/ssl) to secure all communications throughout
+   the system. You can use certificates issued by accredited Certificate
+   Authorities or your own self-signed certificates.
 
-1. Login to your linux host OS. As the docker images are restricted you'll need
-   to login to your docker hub account.
-   ```
-   docker login
-   ```
+*  [Configure an outbound email service](../email/outbound) to enable
+   notifications & invitations via email.
 
-1. Create the configuration directory and install the **bash** control script.
-   ```
-   mkdir ~/.codestream
-   cd ~/.codestream
-   curl -O https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/single-host-preview-install.sh
-   chmod +x single-host-preview-install.sh
-   ```
+*  [Add a messaging integration](../messaging/network) to share your codemarks
+   with your team's existing messaging service and take the conversation beyond
+   the confines of your IDE.
 
-1. Run the script to create a base configuration. It's interactive. Once this
-   step is complete, you will have a configuration file,
-   `~/.codestream/codestream-services-config.json`, which you will be editing in
-   subsequent steps.
-    ```
-    single-host-preview-install.sh -a install
-    ```
-
-1. [Set up an outbound email gateway](../email/outbound). CodeStream
-   relies on email for invitations and registration. CodeStream users can also
-   enable email for notifications.
-
-1. Start the services.
-   ```
-   ./single-host-preview-install.sh -a start
-   ```
-
-1. **IMPORTANT:** Before your users attempt to register and sign in to your
-   CodeStream On-Prem installation they'll need to change their CodeStream
-   extension settings to point their IDEs to it. If they don't, they'll end up
-   creating an account in the CodeStream Cloud service. Provide them with your
-   CodeStream On-Prem hostname as well as any additional options and have them
-   [follow these instructions](../ide/overview) for configuring their
-   respective IDEs.
-
-**It is recommended that you get CodeStream On-Prem working prior to setting up
-any integrations.**  Once you're up and running and are able to create
-codemarks, checkout out the [messaging integrations](../messaging/network) and
-[issue tracking integrations](../issues/overview) documentation to set
-them up.
+*  [Add Issue Integrations](../issues/overview) to connect your codemarks with
+   your team's existing issue tracking and management tools.
 
 
-## Basic Administrative Commands
+## Basic Commands
+
+Most administrative functions are executed through a control script called
+`~/.codestream/codestream` on the host OS.  Here are the most common ones you
+should expect to use.
 
 ### Start the services
 Start up all the services (containers). If the docker image versions haven't
 already been downloaded, this will download them first.
 ```
-~/.codestream/single-host-preview-install.sh -a start
+~/.codestream/codestream --start
 ```
 
 ### Stop all the services
 This stops the containers but does not destroy them.
 ```
-~/.codestream/single-host-preview-install.sh -a stop
+~/.codestream/codestream --stop
 ```
 
 ### Stop all the services except for mongo
 In the event you need to do some database maintenance, this will stop all the
 codestream services except for MongoDB.
 ```
-~/.codestream/single-host-preview-install.sh -M -a stop
+~/.codestream/codestream --stop-execpt-mongo
 ```
 
 ### Check the status of your containers and mongo data volume
 ```
-~/.codestream/single-host-preview-install.sh -a status
+~/.codestream/codestream --status
 ```
 
 ### Backup your mongo database to the host operating system
 This will dump the contents of the mongo database to a single archive file in
 `~/.codestream/backups/`.
 ```
-~/.codestream/single-host-preview-install.sh --backup
+~/.codestream/codestream --backup
 ```
 
-### Update your containers to the latest version
+### Update your system to the latest version
 This will backup your mongo database before doing the update.
 ```
-~/.codestream/single-host-preview-install.sh --update-myself
-~/.codestream/single-host-preview-install.sh --update-containers
+~/.codestream/codestream --update-myself
+~/.codestream/codestream --update-containers
+```
+
+### Restore your mongo database from the host operating system
+This will restore the contents of the mongo database from a prior backup in
+`~/.codestream/backups/`. Specify **latest** to restore the most recent backup.
+```
+~/.codestream/codestream --restore {latest | <file>}
+```
+
+### Backup your mongo database and the entire configuration directory
+This will create a tarball (compressed tar archive file) in the home directory
+of the unix user on your host OS. It is a copy of the entire system including
+all previous database backups and configuration files.
+```
+~/.codestream/codestream --full-backup
 ```
 
 ### Reset your installation
@@ -142,10 +103,29 @@ start the services. In the case of mongo, this _should_ leave the mongo docker
 data volume intact, but make sure you backup the database _BEFORE_ doing a
 reset.
 ```
-~/.codestream/single-host-preview-install.sh --backup
-~/.codestream/single-host-preview-install.sh -a reset
+~/.codestream/codestream --backup
+~/.codestream/codestream --reset
 ```
 This will reset all the containers _except_ mongodb.
 ```
-~/.codestream/single-host-preview-install.sh -M -a reset
+~/.codestream/codestream --reset-except-mongo
 ```
+
+## Routine Maintenance
+
+It is important for you to perform these tasks regularly.
+
+### Keep your system up to date
+
+We have to keep up with the fast pace of development today's software tools
+demand, so you'll need to keep your CodeStream system current as well. It's fast
+and easy to do. [Just follow this update
+procedure](#update-your-system-to-the-latest-version).
+
+### Backup your system
+
+The importance of backups cannot be overstated. [Follow this backup
+procedure](#backup-your-mongo-database-and-the-entire-configuration-directory)
+to create a full backup of your installation. As it only backs up to a file on
+the host OS, it is important you copy that file to another device for safe
+keeping in the event of a catastrophic failure.

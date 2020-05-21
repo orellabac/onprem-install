@@ -1,7 +1,9 @@
 ---
-title: Services Overview
-description: Get to know the CodeStream On-Prem services
+title: Architecture Overview
+description: Get to know the CodeStream On-Prem architecture
 ---
+
+## Services
 
 **CodeStream On-Prem** is made up of a number of services that run on the
 _backend_. Clients, extensions that run in the IDEs, connect to two of them.
@@ -33,3 +35,10 @@ These services are:
     failure. Make sure you store your backups somewhere _other than_ on the
     linux host OS or bare metal server on which it resides. You should consider
     georgraphically independent storage as well.
+
+
+## Traffic Flow
+
+This diagram shows the flow of traffic between the backend services and clients.
+
+![Architecture Diagram](../assets/images/codestream-onprem-arch.png)

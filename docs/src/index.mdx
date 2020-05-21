@@ -10,16 +10,56 @@ which you can install and operate entirely on your own hardware (or cloud
 service provider). You only need a linux host OS running Docker.
 
 If you'd like to proceed with a trial, please reach out to us at
-sales@codestream.com to request access to the docker images. We'll need your
-Docker Hub user ID.
+[sales@codestream.com](mailto:sales@codestream.com) to request access to the
+docker images. We'll need your [Docker Hub](https://hub.docker.com) user ID to
+grant you access to our docker images.
 
-## Architecture
+## Quick Start
 
-The following diagram illustrates the components of CodeStream and how data
-flows through the system.
+1.	Setup a linux server or VM with
+	[docker](https://runnable.com/docker/install-docker-on-linux). Make sure the
+	unix user you login to it with is able to run docker commands _without_
+	using **sudo**.
 
-![Architecture Diagram](assets/images/codestream-onprem-arch.png)
+1.	Login to your docker hub registry account. The host OS should cache your ID
+	and password so you only need to do this once.
+	```
+	docker login
+	```
 
+1.	Cut and paste these commands into your shell. They will download and run the
+	control script which will install and startup CodeStream.
+	```
+	mkdir ~/.codestream
+	cd ~/.codestream
+	curl -s -O https://raw.githubusercontent.com/TeamCodeStream/onprem-install/master/install-scripts/codestream
+	chmod +x codestream
+	~/.codestream/codestream --quickstart
+	```
+
+1.	Install the CodeStream extension in your IDE if you haven't already, and
+	[set the CodeStream extension settings to reference your On-Prem CodeStream
+	server (using http)](../ide/overview). For example,
+	`http://your.codestream.server/`.
+
+1.	[Register a new account and start making
+	codemarks](https://docs.codestream.com/userguide/gettingStarted/create-a-team/)!
+
+It's important to keep your On-Prem installation up to date by [simply running
+these
+commands](configs/single-host-linux#update-your-system-to-the-latest-version)
+periodically. For more information about managing your installation, see the
+[Single Linux Host](configs/single-host-linux) page.
+
+## Help & Feedback
+
+*	Report a bug or send a suggestion in [GitHub
+	issues](https://github.com/TeamCodeStream/CodeStream/issues).
+
+*	Contact us directly at [support@codestream.com](mailto:support@codestream.com).
+
+*	Follow [@teamcodestream](http://twitter.com/teamcodestream) for product updates and to
+	share feedback and questions.
 
 ## More Resources
 
