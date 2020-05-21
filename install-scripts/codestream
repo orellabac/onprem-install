@@ -352,7 +352,7 @@ function backup_mongo {
 
 function restore_mongo {
 	local host=$1 file=$2 prompt=$3
-	[ -z "$file" ] && echo "usage: restore_mongo(host file)" >&2 && return 1
+	[ -z "$file" ] && echo "usage: $0 --restore { latest | /path/to/dumpfile }" >&2 && return 1
 	[ ! -f "$file" ] && echo "$file not found" >&2 && return 1
 	echo "Restoring data from $file"
 	echo -e "
