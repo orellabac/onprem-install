@@ -2,41 +2,43 @@
 
 function usage {
 	echo "
-usage: `basename $0` <from-release> <to-release>
-
-   use 'prod'
+usage: `basename $0` -f pre-release | -D pre-release
 
    eg.
-      `basename $0` beta pre-release
-      `basename $0` beta prod
+      `basename $0` -f pre-release     : promotes pre-release to GA
+      `basename $0` -D pre-release     : diffs pre-release and GA
 "
 	exit 1
 }
 
-function get_file_name {
-	local release=$1
-	local fileName=$2
-	[ $release == prod ] && echo $fileName && return
-	echo $fileName.$release
-}
+fromRel=""
+cmd=""
+while getopts "f:D:" arg
+do
+	case $arg in
+	f) cmd=cp; fromRel=$OPTARG;;
+	D) cmd=diff; fromRel=$OPTARG;;
+	*) usage;;
+	esac
+done
+[ "$fromRel" != "pre-release" ] && echo "only pre-release is supported" && usage
+toRel=""
+[ -n "$toRel" ] && toRelSuffix=".${toRel}" || toRelSuffix=""
+[ -n "$toRel" ] && toRelDir="${toRel}/" || toRelDir=""
 
-[ -z "$2" ] && usage
-
-fromRel=$1
-toRel=$2
 binDir=`dirname $0`
 repoRoot=`cd $binDir/.. && pwd`
+branch=`cd $repoRoot && git status -sb | head -1 | awk '{print $2}' | cut -f1 -d.`
+statusCount=`cd $repoRoot && git status -sb | wc -l`
+[ $statusCount -ne 1 ] && echo "repo needs to be clean for this script to run" && exit 1
+[ "$branch" != master ] && echo "repo needs to be on the master branch" && exit 1
 (cd $repoRoot && git pull origin --rebase) || { echo "pull --rebase failed"; exit 1; }
-for file in versions/preview-single-host.ver config-templates/single-host-preview-minimal-cfg.json.template
+
+echo $cmd $repoRoot/versions/preview-single-host.ver.$fromRel $repoRoot/versions/preview-single-host.ver${toRelSuffix}
+$cmd $repoRoot/versions/preview-single-host.ver.$fromRel $repoRoot/versions/preview-single-host.ver${toRelSuffix}
+
+for file in `cd config-templates/$fromRel && /bin/ls`
 do
-	fromFile=$(get_file_name $fromRel $file)
-	toFile=$(get_file_name $toRel $file)
-	[ ! -f $fromFile ] && echo "$fromFile not found" && exit 1
-	if [ ! -f $toFile ]; then
-		echo -n "$toFile not found - create new release (y/N)? "
-		read ans
-		[ "$ans" != y -a "$ans" != yes ] && exit 1
-	fi
-	echo cp $fromFile $toFile
-	cp $fromFile $toFile
+	echo $cmd $repoRoot/config-templates/$fromRel/$file $repoRoot/config-templates/${toRelDir}$file
+	$cmd $repoRoot/config-templates/$fromRel/$file $repoRoot/config-templates/${toRelDir}$file
 done
