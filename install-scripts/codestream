@@ -794,7 +794,10 @@ load_container_versions
 [ "$1" == "--update-containers" ] && shift && { update_containers_except_mongo $*; exit $?; }
 [ "$1" == "--logs" ] && { capture_logs "$2"; exit $?; }
 [ "$1" == "--backup" ] && { backup_mongo $FQHN; exit $?; }
-[ "$1" == "--full-backup" ] && { backup_mongo $FQHN && d=`/bin/ls -tr $codestreamRoot/backups|tail -1|cut -f1 -d.|sed -e 's/dump_//'` && tar czpf ~/full-codestream-backup.$d.tgz $codestreamRoot && /bin/ls -l ~/full-codestream-backup.$d.tgz || exit 1; }
+if [ "$1" == "--full-backup" ]; then
+	{ backup_mongo $FQHN && d=`/bin/ls -tr $codestreamRoot/backups|tail -1|cut -f1 -d.|sed -e 's/dump_//'` && tar czpf ~/full-codestream-backup.$d.tgz $codestreamRoot && echo -e "\nFull backup is here:" && /bin/ls -l ~/full-codestream-backup.$d.tgz || exit 1; }
+	exit 0
+fi
 
 if [ "$1" == "--restore" ]; then
 	[ "$2" == latest ] && { restore_mongo $FQHN "$(/bin/ls $codestreamRoot/backups/dump_*.gz | tail -1)"; exit $?; }
