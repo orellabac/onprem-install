@@ -85,7 +85,7 @@
 		"runTimeEnvironment": "local",
 		"showConfig": false,
 		"tempAttachmentDirectory": "${CS_MAILIN_SANDBOX}/mailq/attachments",
-		"tmpDirectory": "${CS_OUTBOUND_EMAIL_SANDBOX}/tmp"
+		"tmpDirectory": "${CS_MAILIN_SANDBOX}/tmp"
 	},
 	"outboundEmailServer": {
 		"logger": {

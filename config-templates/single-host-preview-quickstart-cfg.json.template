@@ -72,6 +72,21 @@
 			"username": null
 		}
 	},
+	"inboundEmailServer": {
+		"assetEnvironment": "local",
+		"inboundEmailDirectory": "${CS_MAILIN_SANDBOX}/mailq/new",
+		"inboundEmailDisabled": true,
+		"logger": {
+			"consoleOk": true,
+			"debugOk": false,
+			"directory": "${CS_MAILIN_SANDBOX}/log"
+		},
+		"processDirectory": "${CS_MAILIN_SANDBOX}/mailq/process",
+		"runTimeEnvironment": "local",
+		"showConfig": false,
+		"tempAttachmentDirectory": "${CS_MAILIN_SANDBOX}/mailq/attachments",
+		"tmpDirectory": "${CS_MAILIN_SANDBOX}/tmp"
+	},
 	"outboundEmailServer": {
 		"logger": {
 			"consoleOk": true,
