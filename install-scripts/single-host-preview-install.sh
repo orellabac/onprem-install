@@ -80,20 +80,16 @@ function random_string {
 	head /dev/urandom | $TR_CMD -dc A-Za-z0-9 | head -c $strLen ; echo ''
 }
 
-function get_uuid {
-	# curl -s https://www.uuidtools.com/api/decode/9084b876-4209-4e84-91d4-a7221c63ad65 | python3 -m json.tool
-	curl -s https://www.uuidtools.com/api/generate/timestamp-first|cut -f2 -d'"'
-}
-
 # check for core commands this script needs to work
 function check_env {
 	local rc=0
+	local cmd
 	[ -z "$HOME" ] && echo "\$HOME is not defined" >&2 && rc=1
-	[ -z `which docker 2>/dev/null` ] && echo "'docker' command not found in search path" >&2 && rc=1
-	# [ -z `which docker-compose 2>/dev/null` ] && echo "'docker-compose' command not found in search path" >&2 && rc=1
-	[ -z `which curl 2>/dev/null` ] && echo "'curl' command not found in search path" >&2 && rc=1
-	[ -z `which $TR_CMD 2>/dev/null` ] && echo "'$TR_CMD' command not found in search path" >&2 && rc=1
-	echo $rc
+	for cmd in docker curl $TR_CMD touch
+	do
+		[ -z `which $cmd 2>/dev/null` ] && echo "'$cmd' command not found in search path" >&2 && rc=1
+	done
+	return $rc
 }
 
 # download designated utility scripts
@@ -646,6 +642,7 @@ function capture_logs {
 # display our terms of service and require user to agree.
 # returns 0 if they do agree, 1 otherwise
 function accept_tos {
+	[ -f $codestreamRoot/.tos-agreed ] && return 0
 	local ans
 	echo -n "
 Before proceeding with the installation, you will need to accept our
@@ -664,12 +661,21 @@ Press ENTER to read our Terms of Service..."
 If you agree to these terms, please type 'i agree': "
 	read ans
 	ans=`echo $ans | $TR_CMD [:upper:] [:lower:]`
-	[ "$ans" == "i agree" ] && return 0
+	[ "$ans" == "i agree" ] && touch $codestreamRoot/.tos-agreed && return 0
 	return 1
 }
 
 function quickstart {
-	local _fqhn=$1
+	local start=1
+	local _fqhn
+	while [ $# -gt 0 ]
+	do
+		case $1 in
+		--fqhn) _fqhn=$2; shift 2;;
+		--config-only) start=0; shift;;
+		*) echo "`basename $0` --quickstart [--config-only] [--fqhn hostname]"; exit 1;;
+		esac
+	done
 	[ -z "$_fqhn" ] && _fqhn=`hostname` && echo "using $_fqhn for fully-qualified host name"
 	if [ ! -d $codestreamRoot ]; then
 		echo "creating $codestreamRoot" && mkdir $codestreamRoot && cp -p $0 $codestreamRoot || { echo failed to create $codestreamRoot directory; exit 1; }
@@ -678,7 +684,7 @@ function quickstart {
 	load_config_cache $_fqhn
 	save_config_cache
 	create_config_from_template $codestreamRoot/codestream-services-config.json $codestreamRoot/single-host-preview-cfg.json.template
-	$0 -a start
+	[ $start -eq 1 ] && $0 -a start
 }
 
 function install_and_configure {
@@ -702,7 +708,9 @@ docker volumes.
 Press ENTER when you are ready to proceed..."
 	[ $answerYes -ne 1 ] && read
 
-	[ ! -d $codestreamRoot ] && echo "creating $codestreamRoot" && mkdir $codestreamRoot && cp -p $0 $codestreamRoot || { echo failed to create $codestreamRoot directory; exit 1; }
+	if [ ! -d $codestreamRoot ]; then
+		echo "creating $codestreamRoot" && mkdir $codestreamRoot && cp -p $0 $codestreamRoot || { echo "failed to create $codestreamRoot directory"; exit 1; }
+	fi
 	[ ! -f $codestreamRoot/single-host-preview-cfg.json.template ] && get_config_file_template "" minimal
 
 	echo
@@ -767,8 +775,9 @@ versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$ins
 [ -f $codestreamRoot/config-cache ] && . $codestreamRoot/config-cache
 
 ### ------ Checkout this host system for compatibility
-[ $(check_env) -eq 1 ] && exit 1
+check_env || exit 1
 
+### ------ Migration to new 'codestream' script
 if [ `basename $0` == single-host-preview-install.sh ]; then
 	echo "single-host-preview-install.sh has been replaced with a new control script."
 	[ ! -f $codestreamRoot/codestream ] && echo "Downloading $codestreamRoot/codestream."
@@ -779,7 +788,7 @@ fi
 
 ### ------ Start parsing command line options
 [ "$1" == "--help" -o -z "$1" ] && usage help
-[ "$1" == "--quickstart" ] && { shift && quickstart "$@"; exit $?; }
+[ "$1" == "--quickstart" ] && { shift && accept_tos && quickstart "$@"; exit $?; }
 [ "$1" == "--update-myself" ] && update_myself
 [ "$1" == "--undo-stack" ] && { print_undo_stack; exit $?; }
 
