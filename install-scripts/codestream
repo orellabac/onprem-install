@@ -80,6 +80,11 @@ function random_string {
 	head /dev/urandom | $TR_CMD -dc A-Za-z0-9 | head -c $strLen ; echo ''
 }
 
+function get_uuid {
+	# curl -s https://www.uuidtools.com/api/decode/9084b876-4209-4e84-91d4-a7221c63ad65 | python3 -m json.tool
+	curl -s https://www.uuidtools.com/api/generate/timestamp-first|cut -f2 -d'"'
+}
+
 # check for core commands this script needs to work
 function check_env {
 	local rc=0
