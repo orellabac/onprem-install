@@ -2,7 +2,9 @@
 
 function usage {
 	echo "
-usage: `basename $0` -f pre-release | -D pre-release
+usage: `basename $0` -f <release> | -D <release>
+
+   <release>:  pre-release || beta
 
    eg.
       `basename $0` -f pre-release     : promotes pre-release to GA
@@ -16,13 +18,18 @@ cmd=""
 while getopts "f:D:" arg
 do
 	case $arg in
-	f) cmd=cp; fromRel=$OPTARG;;
-	D) cmd=diff; fromRel=$OPTARG;;
-	*) usage;;
+		f) cmd=cp; fromRel=$OPTARG;;
+		D) cmd=diff; fromRel=$OPTARG;;
+		*) usage;;
 	esac
 done
-[ "$fromRel" != "pre-release" ] && echo "only pre-release is supported" && usage
-toRel=""
+[ -z "$fromRel" ] && usage
+
+case $fromRel in
+	beta) toRel="pre-release";;
+	pre-release) toRel="";;
+	*) echo "release $fromRel not supported"; exit 1;;
+esac
 [ -n "$toRel" ] && toRelSuffix=".${toRel}" || toRelSuffix=""
 [ -n "$toRel" ] && toRelDir="${toRel}/" || toRelDir=""
 
@@ -34,8 +41,11 @@ statusCount=`cd $repoRoot && git status -sb | wc -l`
 [ "$branch" != master ] && echo "repo needs to be on the master branch" && exit 1
 (cd $repoRoot && git pull origin --rebase) || { echo "pull --rebase failed"; exit 1; }
 
-echo $cmd $repoRoot/versions/preview-single-host.ver.$fromRel $repoRoot/versions/preview-single-host.ver${toRelSuffix}
-$cmd $repoRoot/versions/preview-single-host.ver.$fromRel $repoRoot/versions/preview-single-host.ver${toRelSuffix}
+# beta -> pre-release does not affect container versions
+if [ $fromRel != beta ]; then
+	echo $cmd $repoRoot/versions/preview-single-host.ver.$fromRel $repoRoot/versions/preview-single-host.ver${toRelSuffix}
+	$cmd $repoRoot/versions/preview-single-host.ver.$fromRel $repoRoot/versions/preview-single-host.ver${toRelSuffix}
+fi
 
 for file in `cd config-templates/$fromRel && /bin/ls`
 do
