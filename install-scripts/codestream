@@ -200,6 +200,7 @@ function get_config_file_template {
 	[ $debugMode -eq 1 ] && echo curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/config-templates${releasePath}/single-host-preview-$config-cfg.json.template -o $codestreamRoot/single-host-preview-cfg.json.template >&2
 	curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/config-templates${releasePath}/single-host-preview-$config-cfg.json.template -o $codestreamRoot/single-host-preview-cfg.json.template || { echo "error getting config template" >&2; exit 1; }
 	chmod 660 $codestreamRoot/single-host-preview-cfg.json.template || exit 1
+	return 0
 }
 
 # update the configuration file from the latest template using the dt-merge-json
