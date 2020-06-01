@@ -191,7 +191,8 @@ function migrate_config_file_template {
 # fetch the latest configuration file template from the onprem-install repo
 function get_config_file_template {
 	local undoId="$1" config="$2"
-	[ -z "$config" ] && config=quickstart && echo "Installing with $config config"
+	[ -z "$config" ] && config=quickstart
+	[ $debugMode -eq 1 -a -n "$config" ] && echo "Using $config config template"
 	if [ -f $codestreamRoot/single-host-preview-cfg.json.template ]; then
 		[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called get_config_file_template()")
 		cp -p $codestreamRoot/single-host-preview-cfg.json.template $codestreamRoot/.undo/$undoId
@@ -685,6 +686,7 @@ function quickstart {
 	save_config_cache
 	create_config_from_template $codestreamRoot/codestream-services-config.json $codestreamRoot/single-host-preview-cfg.json.template
 	[ $start -eq 1 ] && $0 -a start
+	return 0
 }
 
 function install_and_configure {
