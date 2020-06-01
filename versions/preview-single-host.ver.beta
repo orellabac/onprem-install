@@ -6,6 +6,6 @@ dtPython3DockerVersion=0.0.0
 mailoutDockerVersion=7.2.2-32
 mailoutRepo=teamcodestream/mailout-onprem-dev
 mongoDockerVersion=3.4.9
-onPremVersion=7.2.7
+onPremVersion=7.2.8
 rabbitDockerVersion=0.0.0
 rabbitmqRepo=teamcodestream/rabbitmq-onprem-dev
