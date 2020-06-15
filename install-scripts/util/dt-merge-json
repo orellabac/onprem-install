@@ -6,6 +6,7 @@ import os
 import sys
 import argparse
 import copy
+import uuid
 
 sys.path.append(os.environ['DT_TOP'] + "/lib")
 import sysUtils as su
@@ -18,8 +19,10 @@ def removeServerRunTimeEnvironments(outCfg, newCfg):
 		del outCfg['apiServer']['runTimeEnvironment']
 	if 'runTimeEnvironment' in outCfg['outboundEmailServer']:
 		del outCfg['outboundEmailServer']['runTimeEnvironment']
+	if 'runTimeEnvironment' in outCfg['inboundEmailServer']:
+		del outCfg['inboundEmailServer']['runTimeEnvironment']
 	if 'runTimeEnvironment' in outCfg['broadcastEngine']['codestreamBroadcaster']:
-		del outCfg['broadcastEngine']['codestreamBroadcaster']
+		del outCfg['broadcastEngine']['codestreamBroadcaster']['runTimeEnvironment']
 
 
 def updateSegmentWebToken(outCfg, newCfg):
@@ -120,8 +123,6 @@ else:
 
 # Special work for on-prem configs
 if args.onprem_update_mode:
-	# removeServerRunTimeEnvironments(outCfg, newCfg)
-
 	# if initial config does not have segment tokens in it
 	if not ('telemetry' in curCfg and 'segment' in curCfg['telemetry'] and 'token' in curCfg['telemetry']['segment']):
 		# ...and there is a token in the new one,  delete it. Otherwise make sure there's a webToken as well
@@ -129,10 +130,8 @@ if args.onprem_update_mode:
 			del outCfg['telemetry']['segment']
 		else:
 			updateSegmentWebToken(outCfg, newCfg)
-
-	# if 'sharedGeneral' not in 'outCfg':
-	# 	outCfg['sharedGeneral'] = {}
-	# outCfg['sharedGeneral']['runTimeEnvironment'] = "onprem"
+		if args.debug:
+			su.dumpDict(outCfg['telemetry'], "stderr", "Updated telemetry section:")
 
 	# don't let the template values for SSL certs get into the updated config file
 	if outCfg['ssl']['cafile'] == "/opt/config/{{SSL_CA_FILE}}":
@@ -141,6 +140,20 @@ if args.onprem_update_mode:
 		del outCfg['ssl']['certfile']
 	if outCfg['ssl']['keyfile'] == "/opt/config/{{SSL_KEY_FILE}}":
 		del outCfg['ssl']['keyfile']
+
+	# runTimeEnv has been consolidated into one place
+	removeServerRunTimeEnvironments(outCfg, newCfg)
+	if 'sharedGeneral' not in 'outCfg':
+		outCfg['sharedGeneral'] = {}
+	outCfg['sharedGeneral']['runTimeEnvironment'] = "onprem"
+
+	# We've now added an Installation ID for onprem
+	if 'installationId' in newCfg['sharedGeneral']:
+		if 'installationId' not in outCfg['sharedGeneral'] or outCfg['sharedGeneral']['installationId'] == "{{INSTALLATION_UUID}}":
+			outCfg['sharedGeneral']['installationId'] = str(uuid.uuid1())
+			su.printErr(f"setting installation ID to {outCfg['sharedGeneral']['installationId']}")
+		if args.debug:
+			su.dumpDict(outCfg['sharedGeneral'], "stderr", "Updated sharedGeneral with UUID:")
 
 su.dumpDictOpts(outCfg, tab_indent=True)
 exit(0)

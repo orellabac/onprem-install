@@ -6,7 +6,10 @@
 // - Outbound SMTP:  NodeMailer
 // - Telemetry:      Segment production
 //
-// - environments (profiles):  default=minimal, quickstart
+// - environments (profiles):
+// -    minimal (default): onprem template that includes ssl and outbound email
+// -    quickstart:        onprem template without ssl or email
+// -    local:             local development template
 
 {
 	"apiServer": {
@@ -16,6 +19,7 @@
 		"confirmCodeExpiration": 604800000,
 		"confirmationExpiration": 86400000,
 		"confirmationNotRequired": true,
+		"disablePhoneHome": false,
 		"dontWantAWS": true,
 		"forgotPasswordExpiration": 86400000,
 		"helpIsAvailable": false,
@@ -27,9 +31,9 @@
 		},
 		"marketingSiteUrl": "https://www.codestream.com",
 		"mockMode": false,
+		"phoneHomeUrl": "https://phone-home.codestream.com",
 		"port": 80,
 		"publicApiUrl": "http://{{FQHN}}",
-		"runTimeEnvironment": "onprem",
 		"sessionAwayTimeout": 600000,
 		"showConfig": false,
 		"signupTokenExpiration": 600000,
@@ -46,7 +50,6 @@
 				"directory": "/opt/broadcaster/log"
 			},
 			"port": 12080,
-			"runTimeEnvironment": "local",
 			"secrets": {
 				"api": "{{SECRET_BROADCAST_API}}",
 				"auth": "{{SECRET_BROADCAST_AUTH}}"
@@ -82,17 +85,24 @@
 			"directory": "${CS_MAILIN_SANDBOX}/log"
 		},
 		"processDirectory": "${CS_MAILIN_SANDBOX}/mailq/process",
-		"runTimeEnvironment": "onprem",
 		"showConfig": false,
 		"tempAttachmentDirectory": "${CS_MAILIN_SANDBOX}/mailq/attachments",
-		"tmpDirectory": "${CS_OUTBOUND_EMAIL_SANDBOX}/tmp"
+		"tmpDirectory": "${CS_MAILIN_SANDBOX}/tmp"
 	},
 	"outboundEmailServer": {
+		"assetEnvironment": "local",
 		"logger": {
 			"consoleOk": true,
 			"debugOk": false,
 			"directory": "/opt/mailout/log"
-		}
+		},
+		"showConfig": false,
+		"storage": {
+			"mongo": {
+				"url": null
+			}
+		},
+		"tmpDirectory": "${CS_OUTBOUND_EMAIL_SANDBOX}/tmp"
 	},
 	"queuingEngine": {
 		"rabbitmq": {
@@ -102,6 +112,10 @@
 			"port": 5672,
 			"user": "code"
 		}
+	},
+	"sharedGeneral": {
+		"installationId": "{{INSTALLATION_UUID}}",
+		"runTimeEnvironment": "onprem"
 	},
 	"sharedSecrets": {
 		"auth": "{{SECRET_AUTH}}",

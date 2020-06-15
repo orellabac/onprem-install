@@ -2,9 +2,11 @@
 
 function usage {
 	echo "
-usage: `basename $0` -f <release> | -D <release>
+usage: `basename $0` [-m] -f <release> | -D <release>
 
    <release>:  pre-release || beta
+
+   -m   override check for master branch
 
    eg.
       `basename $0` -f pre-release     : promotes pre-release to GA
@@ -15,11 +17,13 @@ usage: `basename $0` -f <release> | -D <release>
 
 fromRel=""
 cmd=""
-while getopts "f:D:" arg
+masterBranchCheck=1
+while getopts "f:D:m" arg
 do
 	case $arg in
 		f) cmd=cp; fromRel=$OPTARG;;
 		D) cmd=diff; fromRel=$OPTARG;;
+		m) masterBranchCheck=0;;
 		*) usage;;
 	esac
 done
@@ -38,7 +42,7 @@ repoRoot=`cd $binDir/.. && pwd`
 branch=`cd $repoRoot && git status -sb | head -1 | awk '{print $2}' | cut -f1 -d.`
 statusCount=`cd $repoRoot && git status -sb | wc -l`
 [ $statusCount -ne 1 ] && echo "repo needs to be clean for this script to run" && exit 1
-[ "$branch" != master ] && echo "repo needs to be on the master branch" && exit 1
+[ $masterBranchCheck -eq 1 -a "$branch" != master ] && echo "repo needs to be on the master branch" && exit 1
 (cd $repoRoot && git pull origin --rebase) || { echo "pull --rebase failed"; exit 1; }
 
 # beta -> pre-release does not affect container versions

@@ -92,6 +92,13 @@ function check_env {
 	return $rc
 }
 
+function get_uuid {
+	# curl -s https://www.uuidtools.com/api/decode/9084b876-4209-4e84-91d4-a7221c63ad65 | python3 -m json.tool
+	local uuid=$(curl -s https://www.uuidtools.com/api/generate/timestamp-first|cut -f2 -d'"')
+	[ -z "$uuid" ] && echo "unable to generate an installation ID" >&2 && exit 1
+	echo $uuid
+}
+
 # download designated utility scripts
 # args:
 #     force-flag       non-null string forces download of all utilities
@@ -535,6 +542,7 @@ function load_config_cache {
 	[ -z "$SECRET_BROADCAST_AUTH" ] && SECRET_BROADCAST_AUTH=$(random_string)
 	[ -z "$SENDER_EMAIL" ] && SENDER_EMAIL="codestream_alerts@$mailDomain"
 	[ -z "$SUPPORT_EMAIL" ] && SUPPORT_EMAIL="codestream_support@$mailDomain"
+	[ -z "$INSTALLATION_UUID" ] && INSTALLATION_UUID=$(get_uuid)
 }
 
 function save_config_cache {
@@ -551,6 +559,7 @@ SECRET_BROADCAST_API=$SECRET_BROADCAST_API
 SECRET_BROADCAST_AUTH=$SECRET_BROADCAST_AUTH
 SENDER_EMAIL=$SENDER_EMAIL
 SUPPORT_EMAIL=$SUPPORT_EMAIL
+INSTALLATION_UUID=$INSTALLATION_UUID
 " > $codestreamRoot/config-cache
 }
 
@@ -560,6 +569,7 @@ function print_config_vars {
 Current configuration values:
 
 	Fully qualified host name:       $FQHN
+	Installation ID:                 $INSTALLATION_UUID
 	SSL certificate file name:       $SSL_CERT_FILE
 	SSL key file name:               $SSL_KEY_FILE
 	SSL CA bundle file name:         $SSL_CA_FILE
@@ -579,6 +589,7 @@ Current configuration values:
 function edit_config_vars {
 	local newVal
 	echo -n "Fully qualified host name ($FQHN): "; read newVal; [ -n "$newVal" ] && FQHN=$newVal
+	echo -n "Installation ID ($INSTALLATION_UUID): "; read newVal; [ -n "$newVal" ] && INSTALLATION_UUID=$newVal
 	echo -n "SSL certificate file name ($SSL_CERT_FILE): "; read newVal; [ -n "$newVal" ] && SSL_CERT_FILE=$newVal
 	echo -n "SSL key file name ($SSL_KEY_FILE): "; read newVal; [ -n "$newVal" ] && SSL_KEY_FILE=$newVal
 	echo -n "SSL CA bundle file name ($SSL_CA_FILE): "; read newVal; [ -n "$newVal" ] && SSL_CA_FILE=$newVal
@@ -595,6 +606,7 @@ function edit_config_vars {
 
 function validate_config_vars {
 	local error=0
+	[ -z "$INSTALLATION_UUID" ] && echo "Installation ID requred" && error=1
 	[ -z "$SSL_CERT_FILE" ] && echo "SSL certificate file name required" && error=1
 	[ -n "$SSL_CERT_FILE" -a ! -f $codestreamRoot/$SSL_CERT_FILE ] && echo "SSL certificate $codestreamRoot/$SSL_CERT_FILE not found" && error=1
 	[ -z "$SSL_KEY_FILE" ] && echo "SSL key file name required" && error=1
@@ -608,6 +620,7 @@ function create_config_from_template {
 	local cfg_file=$1 cfg_template=$2
 	cat $cfg_template \
 	| sed -e "s/{{FQHN}}/$FQHN/g" \
+	| sed -e "s/{{INSTALLATION_UUID}}/$INSTALLATION_UUID/g" \
 	| sed -e "s/{{SSL_CERT_FILE}}/$SSL_CERT_FILE/g" \
 	| sed -e "s/{{SSL_KEY_FILE}}/$SSL_KEY_FILE/g" \
 	| sed -e "s/{{SSL_CA_FILE}}/$SSL_CA_FILE/g" \
@@ -811,7 +824,8 @@ load_container_versions
 [ "$1" == "--logs" ] && { capture_logs "$2"; exit $?; }
 [ "$1" == "--backup" ] && { backup_mongo $FQHN; exit $?; }
 if [ "$1" == "--full-backup" ]; then
-	{ backup_mongo $FQHN && d=`/bin/ls -tr $codestreamRoot/backups|tail -1|cut -f1 -d.|sed -e 's/dump_//'` && tar czpf ~/full-codestream-backup.$d.tgz $codestreamRoot && echo -e "\nFull backup is here:" && /bin/ls -l ~/full-codestream-backup.$d.tgz || exit 1; }
+	csRootBase=`basename $codestreamRoot`
+	{ backup_mongo $FQHN && d=`/bin/ls -tr $codestreamRoot/backups|tail -1|cut -f1 -d.|sed -e 's/dump_//'` && cd $codestreamRoot/.. && tar -czpf ~/full-codestream-backup.$d.tgz $csRootBase && echo -e "\nFull backup is here:" && /bin/ls -l ~/full-codestream-backup.$d.tgz || exit 1; }
 	exit 0
 fi
 

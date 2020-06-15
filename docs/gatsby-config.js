@@ -47,8 +47,15 @@ module.exports = {
 						'messaging/slack',
 						'messaging/msteams',
 					],
-					'Issue Ingtegrations': [
+					'Issue Integrations': [
 						'issues/overview',
+						'issues/asana',
+						'issues/azuredevops',
+						'issues/bitbucket',
+						'issues/github',
+						'issues/gitlab',
+						'issues/jira',
+						'issues/trello',
 					],
 					'IDE Settings': [
 						'ide/overview',

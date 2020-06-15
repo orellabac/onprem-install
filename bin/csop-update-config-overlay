@@ -1,0 +1,20 @@
+#!/bin/bash
+
+[ -z "$1" ] && echo "usage: $0 -f" && exit 1
+[ -z "$CSOP_OVERLAY_FILE" ] && echo "CSOP_OVERLAY_FILE not defined" && exit 1
+
+. /etc/config-profile || exit 1
+cd ~/.codestream
+[ ! -f $CSOP_OVERLAY_FILE ] && echo "$CSOP_OVERLAY_FILE not found" && exit 1
+
+now=`date +%Y%m%d%H%M%S`
+cp $CSOP_OVERLAY_FILE $CSOP_OVERLAY_FILE.$now || exit 1
+mv codestream-services-config.json codestream-services-config.json.$now || exit 1
+
+echo aws s3 cp s3://$AMICFG_OPS_BUCKET/$AMICFG_OPS_BUCKET_PATH/$AMICFG_GROUP/$CSOP_OVERLAY_FILE .
+aws s3 cp s3://$AMICFG_OPS_BUCKET/$AMICFG_OPS_BUCKET_PATH/$AMICFG_GROUP/$CSOP_OVERLAY_FILE . || exit 1
+
+tar xzf $CSOP_OVERLAY_FILE || exit 1
+
+echo docker run --rm  --network=host -v /home/web/.codestream:/cs teamcodestream/dt-python3:0.0.0 /cs/util/dt-merge-json --existing-file /cs/codestream-services-config.json.$now --new-file /cs/custom-config-options.json --overwrite-from-new >codestream-services-config.json
+docker run --rm  --network=host -v /home/web/.codestream:/cs teamcodestream/dt-python3:0.0.0 /cs/util/dt-merge-json --existing-file /cs/codestream-services-config.json.$now --new-file /cs/custom-config-options.json --overwrite-from-new >codestream-services-config.json || exit 1
