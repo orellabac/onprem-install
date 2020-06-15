@@ -1,5 +1,5 @@
 apiDockerVersion="7.4.1-137"
-broadcasterDockerVersion="7.4.2-24"
+broadcasterDockerVersion="7.4.1-25"
 dtPython3DockerVersion="0.0.0"
 mailoutDockerVersion="7.4.1-28"
 mongoDockerVersion="3.4.9"
