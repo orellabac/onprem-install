@@ -160,7 +160,7 @@ Next, add the App ID and Password to the CodeStream On-Prem configuration file,
       ...
       "integrations": {
          "msteams": {
-            "microsoft.com": {
+            "cloud": {
                "botAppId": "<app-id>",
                "botAppPassword": "<secret-password>"
             }

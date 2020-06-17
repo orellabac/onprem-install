@@ -57,7 +57,7 @@ Slack.
 		```
 		"integrations": {
 				"slack": {
-						"slack.com": {
+						"cloud": {
 								"appClientId": "<your-slack-app-client-id>",
 								"appClientSecret": "<your-slack-app-client-secret>",
 								"appId": "<your-slack-app-id>",
