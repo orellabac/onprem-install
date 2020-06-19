@@ -24,7 +24,7 @@ Delaware corporation, and you (Subscriber). The parties hereby agree as follows:
      title and interest, including all intellectual property rights, in and to the
      Product, the software, and other technology included therein (including any
      feedback that Subscriber may provide during evaluation). The Product is
-     configured by default to send anonymized telemetry to CodeStream for support and
+     configured by default to send telemetry to CodeStream for support and
      reporting purposes. Should Subscriber choose to disable or otherwise block
      telemetry, CodeStream (directly or through or its authorized agent) retains the
      right to audit Subscriber’s Product instance(s) not more than once per calendar
