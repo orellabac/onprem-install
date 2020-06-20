@@ -32,15 +32,14 @@ module.exports = {
 				// Navigation - the order of these properties seems to be used on the site ??
 				sidebarCategories: {
 					null: ['index', 'tos'],
-					Configurations: [
+					'Installation Types': [
 						'configs/service-overview',
 						'configs/single-host-linux',
 					],
-					SSL: [
-						'ssl/ssl'
-					],
-					Email: [
-						'email/outbound'
+					'Service Configurations': [
+						'serviceconfigs/ssl',
+						'serviceconfigs/outbound',
+						'serviceconfigs/telemetry',
 					],
 					'Messaging Integrations': [
 						'messaging/network',
