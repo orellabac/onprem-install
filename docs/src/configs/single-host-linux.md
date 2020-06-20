@@ -5,9 +5,10 @@ description: Run containers on a single linux host OS
 
 The **Single Linux Host** configuration of CodeStream On-Prem uses one docker
 container for each of the CodeStream services (there is no scaling or
-redundancy) all running on a single host. Due to limitations of docker's
-implementation on some OS's, you must use Linux for the host OS. This limitation
-is imposed due to filesystem compatibility and host based networking.
+redundancy) all running on a single linux host. Due to limitations of docker's
+implementation on some platforms, you must use Linux for the host OS. This
+limitation is imposed due to filesystem compatibility and the requirement of
+host based networking.
 
 The [Quick Start](/#quick-start) instructions on the On-Prem Administration home
 page provides instructions for setting up the simplest **Single Linux Host**
@@ -17,16 +18,23 @@ CodeStream clients (IDE extensions) make requests to the API
 service on port **80** using **HTTP** and the Broadcaster on port **12080**
 using **HTTP websockets**.
 
+The configuration file which controls all of your installation's functionality
+resides on the host OS as **~/.codestream/codestream-services-config.json**. If
+you want to make changes to your configuration, our instructions will walk you
+through the edits you'll need to make to this file. It is a **JSON** file and
+[must be syntactically formatted as such](https://www.json.org). Further, you
+must not add properties to it unless documented here, nor remove properties from
+it.
 
 ## Extend CodeStream's Capabilities
 
 Here are links to a few of the ways to extend your installation's capabilities.
 
-*  [Add SSL Certificates](../ssl/ssl) to secure all communications throughout
+*  [Add SSL Certificates](../serviceconfigs/ssl) to secure all communications throughout
    the system. You can use certificates issued by accredited Certificate
    Authorities or your own self-signed certificates.
 
-*  [Configure an outbound email service](../email/outbound) to enable
+*  [Configure an outbound email service](../serviceconfigs/outbound) to enable
    notifications & invitations via email.
 
 *  [Add a messaging integration](../messaging/network) to share your codemarks
