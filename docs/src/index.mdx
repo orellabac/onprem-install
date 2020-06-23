@@ -14,10 +14,14 @@ Each new installation includes a trial license to get you started.
 
 ## Quick Start
 
-1.	Setup a linux server or VM with
+1.	Prepare a linux server or VM (referred to as the host OS) with
 	[docker](https://runnable.com/docker/install-docker-on-linux). Make sure the
 	unix user you login to it with is able to run docker commands _without_
 	using **sudo**.
+
+	It is important that the hostname of the host OS resolves to the same IP
+	address for both itself and the CodeStream clients. Containers running on
+	the host OS will talk to each other in addition to the clients.
 
 1.	Cut and paste these commands into your shell. They will download and run the
 	control script which will install and startup CodeStream.
