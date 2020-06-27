@@ -90,6 +90,25 @@ def removeNullsFromDict(d):
 				del d[k]
 
 
+def updatePathsForMonoRepo(outCfg):
+	if outCfg['apiServer']['logger']['directory'].startswith("/opt"):
+		outCfg['apiServer']['logger']['directory'] = "${CS_API_LOGS}"
+	if 'tmpDirectory' in outCfg['apiServer']:
+		if outCfg['apiServer']['tmpDirectory'].startswith("/opt"):
+			outCfg['apiServer']['tmpDirectory'] = "${CS_API_TMP}"
+	if 'outboundEmailServer' in outCfg:
+		if 'logger' in outCfg['outboundEmailServer']:
+			if outCfg['outboundEmailServer']['logger']['directory'].startswith("/opt"):
+				outCfg['outboundEmailServer']['logger']['directory'] = "${CS_OUTBOUND_EMAIL_LOGS}"
+		if 'tmpDirectory' in outCfg['outboundEmailServer']:
+			if outCfg['outboundEmailServer']['tmpDirectory'].startswith("/opt"):
+				outCfg['outboundEmailServer']['tmpDirectory'] = "${CS_OUTBOUND_EMAIL_TMP}"
+			if outCfg['outboundEmailServer']['tmpDirectory'].startswith("${CS_OUTBOUND_EMAIL_SANDBOX}"):
+				outCfg['outboundEmailServer']['tmpDirectory'] = "${CS_OUTBOUND_EMAIL_TMP}"
+	if outCfg['broadcastEngine']['codestreamBroadcaster']['logger']['directory'].startswith("/opt"):
+		outCfg['broadcastEngine']['codestreamBroadcaster']['logger']['directory'] = "${CS_BROADCASTER_LOGS}"
+
+
 parser = argparse.ArgumentParser(description="merge json files")
 parser.add_argument('--existing-file', type=str, required=True, help="json to update")
 parser.add_argument('--new-file', type=str, required=True, help="new json data")
@@ -143,17 +162,23 @@ if args.onprem_update_mode:
 
 	# runTimeEnv has been consolidated into one place
 	removeServerRunTimeEnvironments(outCfg, newCfg)
-	if 'sharedGeneral' not in 'outCfg':
+
+	if 'sharedGeneral' not in outCfg:
 		outCfg['sharedGeneral'] = {}
 	outCfg['sharedGeneral']['runTimeEnvironment'] = "onprem"
 
 	# We've now added an Installation ID for onprem
 	if 'installationId' in newCfg['sharedGeneral']:
 		if 'installationId' not in outCfg['sharedGeneral'] or outCfg['sharedGeneral']['installationId'] == "{{INSTALLATION_UUID}}":
+			su.printErr(f"outCfg[sharedGeneral[installationId] = {outCfg['sharedGeneral']['installationId']}")
 			outCfg['sharedGeneral']['installationId'] = str(uuid.uuid1())
 			su.printErr(f"setting installation ID to {outCfg['sharedGeneral']['installationId']}")
 		if args.debug:
 			su.dumpDict(outCfg['sharedGeneral'], "stderr", "Updated sharedGeneral with UUID:")
+
+	# config updates for mono-repo
+	updatePathsForMonoRepo(outCfg)
+
 
 su.dumpDictOpts(outCfg, tab_indent=True)
 exit(0)
