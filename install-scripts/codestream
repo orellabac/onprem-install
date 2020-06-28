@@ -709,7 +709,7 @@ function install_and_configure {
 	[ -f $codestreamRoot/codestream-services-config.json ] && echo "$codestreamRoot/codestream-services-config.json already exists!">&2 && exit 1
 
 	echo -n "
-This script will install the single-host-preview version of CodeStream OnPrem.
+This script will install the single-linux-host configuration of CodeStream OnPrem.
 It runs services in docker containers on a single host.
 
 You will need to perform some external work and update the codestream config file
@@ -771,7 +771,7 @@ the SMTP settings in the config file before you start the docker services.
 #########
 
 ### ------ Globals ------
-[ -z "$codestreamRoot" ] && codestreamRoot=`/bin/bash -c 'echo ~/.codestream'`
+[ -z "$codestreamRoot" ] && codestreamRoot=`dirname $0`
 [ -z "$TR_CMD" ] && TR_CMD=tr
 releaseSufx=""
 releasePath=""
@@ -791,15 +791,6 @@ versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$ins
 
 ### ------ Checkout this host system for compatibility
 check_env || exit 1
-
-### ------ Migration to new 'codestream' script
-if [ `basename $0` == single-host-preview-install.sh ]; then
-	echo "single-host-preview-install.sh has been replaced with a new control script."
-	[ ! -f $codestreamRoot/codestream ] && echo "Downloading $codestreamRoot/codestream."
-	echo -e "\nPlease run '$codestreamRoot/codestream' from now on."
-	[ ! -f $codestreamRoot/codestream ] && update_myself
-	exit 0
-fi
 
 ### ------ Start parsing command line options
 [ "$1" == "--help" -o -z "$1" ] && usage help
