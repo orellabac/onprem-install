@@ -56,6 +56,9 @@ module.exports = {
 						'issues/jira',
 						'issues/trello',
 					],
+					'Other Integrations': [
+						'otherintegrations/okta'
+					],
 					'IDE Settings': [
 						'ide/overview',
 					],
