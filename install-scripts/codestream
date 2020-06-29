@@ -771,7 +771,7 @@ the SMTP settings in the config file before you start the docker services.
 #########
 
 ### ------ Globals ------
-[ -z "$codestreamRoot" ] && codestreamRoot=`dirname $0`
+[ -z "$codestreamRoot" ] && csDir=`dirname $0` && codestreamRoot=$(cd $csDir && pwd)
 [ -z "$TR_CMD" ] && TR_CMD=tr
 releaseSufx=""
 releasePath=""
