@@ -1,5 +1,12 @@
 # Change Log
 
+## [8.0.0] - 2020-6-30
+
+### Added
+
+- Adds the ability to "start work" by selecting a ticket (Trello, Jira, etc.), moving it to the appropriate in-progress state, and automatically creating a feature branch
+- Adds support for creating PRs on GitHub, GitLab or Bitbucket once a code review has been approved
+
 ## [7.4.0] - 2020-6-15
 
 ### Added
