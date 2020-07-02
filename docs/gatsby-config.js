@@ -62,9 +62,9 @@ module.exports = {
 					'IDE Settings': [
 						'ide/overview',
 					],
-					// FAQ: [
-					// 	'faq/proxy',
-					// ],
+					FAQ: [
+						'faq/passwords',
+					],
 				},
 			},
 		},
