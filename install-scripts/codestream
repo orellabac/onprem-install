@@ -278,8 +278,8 @@ function run_api_utility {
 	local util_name=$1
 	[ -z "$util_name" ] && "utility name required" && return 1
 	shift
-	echo docker run --rm -v $codestreamRoot:/opt/config --network=host $apiRepo:$apiDockerVersion node /opt/api/api_server/bin/$util_name "$@"
-	docker run --rm -v $codestreamRoot:/opt/config --network=host $apiRepo:$apiDockerVersion node /opt/api/api_server/bin/$util_name "$@"
+	echo docker run --rm -v $codestreamRoot:/opt/config --network=host $apiRepo:$apiDockerVersion node /opt/api/codestream-server/api_server/bin/$util_name "$@"
+	docker run --rm -v $codestreamRoot:/opt/config --network=host $apiRepo:$apiDockerVersion node /opt/api/codestream-server/api_server/bin/$util_name "$@"
 	return $?
 }
 
