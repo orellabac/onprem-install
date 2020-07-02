@@ -27,7 +27,7 @@
 		"logger": {
 			"consoleOk": true,
 			"debugOk": false,
-			"directory": "/opt/api/log"
+			"directory": "${CS_API_LOGS}"
 		},
 		"marketingSiteUrl": "https://www.codestream.com",
 		"mockMode": false,
@@ -37,7 +37,7 @@
 		"sessionAwayTimeout": 600000,
 		"showConfig": false,
 		"signupTokenExpiration": 600000,
-		"tmpDirectory": "/opt/api/tmp"
+		"tmpDirectory": "${CS_API_TMP}"
 	},
 	"broadcastEngine": {
 		"codestreamBroadcaster": {
@@ -47,7 +47,7 @@
 			"logger": {
 				"consoleOk": true,
 				"debugOk": false,
-				"directory": "/opt/broadcaster/log"
+				"directory": "${CS_BROADCASTER_LOGS}"
 			},
 			"port": 12080,
 			"secrets": {
@@ -94,7 +94,7 @@
 		"logger": {
 			"consoleOk": true,
 			"debugOk": false,
-			"directory": "/opt/mailout/log"
+			"directory": "${CS_OUTBOUND_EMAIL_LOGS}"
 		},
 		"showConfig": false,
 		"storage": {
@@ -102,7 +102,7 @@
 				"url": null
 			}
 		},
-		"tmpDirectory": "${CS_OUTBOUND_EMAIL_SANDBOX}/tmp"
+		"tmpDirectory": "${CS_OUTBOUND_EMAIL_TMP}"
 	},
 	"queuingEngine": {
 		"rabbitmq": {
