@@ -30,7 +30,7 @@ Usage:
     $cmd --update-containers [--no-start] [--no-backup]  # grab latest container versions (performs backup)
     $cmd --update-myself                     # update the codestream control script and utilities
     $cmd --run-python-script <script> <opts> # run a python script using the codestream python container
-	$cmd --make-self-signed-cert             # create a key and self-signed SSL certificate
+    $cmd --make-self-signed-cert             # create a key and self-signed SSL certificate
 "
 	if [ "$1" == help ]; then
 		echo "

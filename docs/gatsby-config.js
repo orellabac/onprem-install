@@ -40,6 +40,7 @@ module.exports = {
 						'serviceconfigs/ssl',
 						'serviceconfigs/outbound',
 						'serviceconfigs/telemetry',
+						'serviceconfigs/awsAlb'
 					],
 					'Messaging Integrations': [
 						'messaging/network',
