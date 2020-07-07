@@ -114,7 +114,7 @@ function get_uuid {
 function fetch_utilities {
 	local force_fl="$1"
 	[ ! -d $codestreamRoot/util ] && mkdir $codestreamRoot/util
-	for u in dt-merge-json set-json-property
+	for u in dt-merge-json
 	do
 		if [ ! -f $codestreamRoot/$u -o -n "$force_fl" ]; then
 			# echo "Fetching $u ..."
