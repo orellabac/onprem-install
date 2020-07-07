@@ -30,6 +30,7 @@ Usage:
     $cmd --update-containers [--no-start] [--no-backup]  # grab latest container versions (performs backup)
     $cmd --update-myself                     # update the codestream control script and utilities
     $cmd --run-python-script <script> <opts> # run a python script using the codestream python container
+	$cmd --make-self-signed-cert             # create a key and self-signed SSL certificate
 "
 	if [ "$1" == help ]; then
 		echo "
@@ -92,6 +93,14 @@ function check_env {
 	return $rc
 }
 
+function make_self_signed_cert {
+	local opensslCmd=`which openssl`
+	[ -z "$opensslCmd" ] && echo "openssl command not found - this is needed to create a self-signed cert" && exit 1
+	cd $codestreamRoot || exit 1
+	echo "Creating key (key.pem) and self-signed cert (cert.pem)"
+	openssl req -nodes -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 3650 -subj "/C=US/ST=NY/L=New York/O=Dis/CN=$FQHN" || exit 1
+}
+
 function get_uuid {
 	# curl -s https://www.uuidtools.com/api/decode/9084b876-4209-4e84-91d4-a7221c63ad65 | python3 -m json.tool
 	local uuid=$(curl -s https://www.uuidtools.com/api/generate/timestamp-first|cut -f2 -d'"')
@@ -105,7 +114,7 @@ function get_uuid {
 function fetch_utilities {
 	local force_fl="$1"
 	[ ! -d $codestreamRoot/util ] && mkdir $codestreamRoot/util
-	for u in dt-merge-json
+	for u in dt-merge-json set-json-property
 	do
 		if [ ! -f $codestreamRoot/$u -o -n "$force_fl" ]; then
 			# echo "Fetching $u ..."
@@ -807,6 +816,7 @@ migrate_config_file_template     # the downloaded config template is now 'single
 fetch_utilities
 load_container_versions
 
+[ "$1" == "--make-self-signed-cert" ] && { make_self_signed_cert; exit $?; }
 [ "$1" == "--run-python-script" ] && { shift; run_python_script "$@"; exit $?; }
 [ "$1" == "--run-support-script" ] && { run_support_script "$2"; exit $?; }
 [ "$1" == "--run-api-utility" ] && shift && { run_api_utility "$@"; exit $?; }

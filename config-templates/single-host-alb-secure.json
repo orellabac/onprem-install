@@ -1,0 +1,173 @@
+{
+	"AWSTemplateFormatVersion" : "2010-09-09",
+	"Description" : "ALB configuration for CodeStream Single Linux Host",
+ 	"Resources" : {
+		"ApiTargets": {
+			"Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+			"Properties": {
+				"HealthCheckIntervalSeconds": 15,
+				"HealthCheckPath": "/no-auth/status",
+				"HealthCheckPort": "traffic-port",
+				"HealthCheckProtocol": "HTTPS",
+				"HealthCheckTimeoutSeconds": 5,
+				"HealthyThresholdCount": 5,
+				"UnhealthyThresholdCount": 2,
+				"Name": "codestream-api-targets",
+				"Port": 443,
+				"Protocol": "HTTPS",
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "codestream_api_targets"
+					}
+				],
+				"TargetType": "instance",
+				"VpcId": "{{ vpcId }}"
+			}
+		},
+		"BroadcasterTargets": {
+			"Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+			"Properties": {
+				"HealthCheckIntervalSeconds": 15,
+				"HealthCheckPath": "/no-auth/status",
+				"HealthCheckPort": "traffic-port",
+				"HealthCheckProtocol": "HTTPS",
+				"HealthCheckTimeoutSeconds": 5,
+				"HealthyThresholdCount": 5,
+				"UnhealthyThresholdCount": 2,
+				"Name": "codestream-broadcaster-targets",
+				"Port": 12443,
+				"Protocol": "HTTPS",
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "codestream_broadcaster_targets"
+					}
+				],
+				"TargetType": "instance",
+				"VpcId": "{{ vpcId }}"
+			}
+		},
+		"Elb" : {
+			"Type" : "AWS::ElasticLoadBalancingV2::LoadBalancer",
+			"DeletionPolicy" : "Delete",
+			"Properties" : {
+			    "Name" : "codestream-alb",
+			    "Scheme" : "internet-facing",
+			    "SecurityGroups" : [
+					{
+						"Ref": "ElbSecurityGroup"
+					}
+				],
+			    "Subnets" : [
+					"{{ publicSubnetIdA }}",
+					"{{ publicSubnetIdB }}"
+				],
+			    "Type" : "application",
+			    "IpAddressType" : "ipv4",
+				"Tags" : [
+					{ "Key" : "Name","Value" : "codestream_alb" }
+				]
+			}
+		},
+		"ApiListener": {
+			"Type": "AWS::ElasticLoadBalancingV2::Listener",
+			"Properties": {
+				"DefaultActions": [
+					{
+						"TargetGroupArn": {
+							"Ref": "ApiTargets"
+						},
+						"Type": "forward"
+					}
+				],
+				"LoadBalancerArn": {
+					"Ref": "Elb"
+				},
+				"Port": 443,
+				"Protocol": "HTTPS",
+				"SslPolicy": "ELBSecurityPolicy-2016-08",
+				"Certificates": [
+					{
+						"CertificateArn": "{{ sslCertArn }}"
+					}
+				]
+			}
+		},
+		"BroadcasterListener": {
+			"Type": "AWS::ElasticLoadBalancingV2::Listener",
+			"Properties": {
+				"DefaultActions": [
+					{
+						"TargetGroupArn": {
+							"Ref": "BroadcasterTargets"
+						},
+						"Type": "forward"
+					}
+				],
+				"LoadBalancerArn": {
+					"Ref": "Elb"
+				},
+				"Port": 12443,
+				"Protocol": "HTTPS",
+				"SslPolicy": "ELBSecurityPolicy-2016-08",
+				"Certificates": [
+					{
+						"CertificateArn": "{{ sslCertArn }}"
+					}
+				]
+			}
+		},
+		"ElbSecurityGroup": {
+			"Properties": {
+				"GroupDescription": "CodeStream ALB Security Group",
+				"GroupName": "codestream_alb_sg",
+				"SecurityGroupEgress": [
+					{
+						"CidrIp": "0.0.0.0/0",
+						"Description": "All traffic is allowed out",
+						"IpProtocol": -1
+					}
+				],
+				"SecurityGroupIngress": [
+					{
+						"CidrIp": "{{ CodeStreamClientCidrBlock }}",
+						"Description": "API calls via HTTPS for CodeStream Clients",
+						"FromPort": 443,
+						"IpProtocol": "tcp",
+						"ToPort": 443
+					},
+					{
+						"CidrIp": "{{ CodeStreamHostOsIp }}/32",
+						"Description": "API calls via HTTP for CodeStream Host OS",
+						"FromPort": 443,
+						"IpProtocol": "tcp",
+						"ToPort": 443
+					},
+					{
+						"CidrIp": "{{ CodeStreamClientCidrBlock }}",
+						"Description": "Broadcaster web sockets via HTTPS for CodeStream Clients",
+						"FromPort": 12443,
+						"IpProtocol": "tcp",
+						"ToPort": 12443
+					},
+					{
+						"CidrIp": "{{ CodeStreamHostOsIp }}/32",
+						"Description": "Broadcaster web sockets via HTTP for CodeStream Host OS",
+						"FromPort": 12443,
+						"IpProtocol": "tcp",
+						"ToPort": 12443
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "codestream_alb_sg"
+					}
+				],
+				"VpcId": "{{ vpcId }}"
+			},
+			"Type": "AWS::EC2::SecurityGroup"
+		}
+	}
+}
