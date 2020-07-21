@@ -176,6 +176,19 @@ if args.onprem_update_mode:
 		if args.debug:
 			su.dumpDict(outCfg['sharedGeneral'], "stderr", "Updated sharedGeneral with UUID:")
 
+	# Remove assetEnvironment from config
+	if 'assetEnvironment' in outCfg['apiServer']:
+		del outCfg['apiServer']['assetEnvironment']
+	if 'codestreamBroadcaster' in outCfg['broadcastEngine']:
+		if 'assetEnvironment' in outCfg['broadcastEngine']['codestreamBroadcaster']:
+			del outCfg['broadcastEngine']['codestreamBroadcaster']['assetEnvironment']
+	if 'inboundEmailServer' in outCfg:
+		if 'assetEnvironment' in outCfg['inboundEmailServer']:
+			del outCfg['inboundEmailServer']['assetEnvironment']
+	if 'outboundEmailServer' in outCfg:
+		if 'assetEnvironment' in outCfg['outboundEmailServer']:
+			del outCfg['outboundEmailServer']['assetEnvironment']
+
 	# config updates for mono-repo
 	updatePathsForMonoRepo(outCfg)
 

@@ -13,7 +13,6 @@
 
 {
 	"apiServer": {
-		"assetEnvironment": "onprem",
 		"authOrigin": null,
 		"callbackEnvironment": "onprem",
 		"confirmCodeExpiration": 604800000,
@@ -41,7 +40,6 @@
 	},
 	"broadcastEngine": {
 		"codestreamBroadcaster": {
-			"assetEnvironment": "local",
 			"host": "{{FQHN}}",
 			"ignoreHttps": true,
 			"logger": {
@@ -76,7 +74,6 @@
 		}
 	},
 	"inboundEmailServer": {
-		"assetEnvironment": "onprem",
 		"inboundEmailDirectory": "${CS_MAILIN_SANDBOX}/mailq/new",
 		"inboundEmailDisabled": true,
 		"logger": {
@@ -90,7 +87,6 @@
 		"tmpDirectory": "${CS_MAILIN_SANDBOX}/tmp"
 	},
 	"outboundEmailServer": {
-		"assetEnvironment": "local",
 		"logger": {
 			"consoleOk": true,
 			"debugOk": false,
