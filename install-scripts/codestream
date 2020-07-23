@@ -27,7 +27,7 @@ Usage:
     $cmd --run-api-utility <script>          # run an api utility in the API container
     $cmd --run-support-script <script>       # run a support script located in $codestreamRoot/support/
     $cmd --undo-stack                        # print the undo stack
-    $cmd --update-containers [--no-start] [--no-backup]  # grab latest container versions (performs backup)
+    $cmd --update-containers [--no-start] [--no-backup] [--force] # grab latest container versions (performs backup)
     $cmd --update-myself                     # update the codestream control script and utilities
     $cmd --run-python-script <script> <opts> # run a python script using the codestream python container
     $cmd --make-self-signed-cert             # create a key and self-signed SSL certificate
@@ -230,8 +230,9 @@ function update_config_file {
 	# update config file with new template data
 	[ $debugMode -eq 1 ] && echo "run_python_script /cs/util/dt-merge-json --existing-file /cs/.undo/$undoId/codestream-services-config.json --onprem-update-mode --new-file /cs/single-host-preview-cfg.json.template >$codestreamRoot/codestream-services-config.json.new" >&2
 	run_python_script /cs/util/dt-merge-json --existing-file /cs/.undo/$undoId/codestream-services-config.json --onprem-update-mode --new-file /cs/single-host-preview-cfg.json.template >$codestreamRoot/codestream-services-config.json.new
+	rc=$?
 	if [ $rc -ne 0 -o ! -s $codestreamRoot/codestream-services-config.json.new ]; then
-		echo "There was a problem updating the config file!!!" >&2
+		echo "There was a problem updating the config file ($rc)!!!" >&2
 		/bin/rm -f $codestreamRoot/codestream-services-config.json.new
 		exit 1
 	fi
@@ -294,10 +295,11 @@ function run_api_utility {
 
 # Execute the docker update procedure
 function update_containers_except_mongo {
-	local parm nostart nobackup
+	local parm nostart nobackup force
 	for parm in $*; do
 		[ $parm == "--no-start" ] && nostart=1
 		[ $parm == "--no-backup" ] && nobackup=1
+		[ $parm == "--force" ] && force=1
 	done
 	local undoId=$(undo_stack_id "" "full container update procedure")
 	backup_dot_codestream $undoId
@@ -307,7 +309,7 @@ function update_containers_except_mongo {
 	update_container_versions $undoId
 	local rc=$?
 	[ $rc -eq 2 ] && echo "error updating containers">&2 && exit 1
-	if [ $rc -eq 0 ]; then
+	if [ $rc -eq 0  -o  -n "$force" ]; then
 		load_container_versions $undoId
 		update_config_file $undoId
 	else
