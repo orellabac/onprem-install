@@ -18,9 +18,9 @@ CodeStream On-Prem installation.
 * [Trello](trello)
 
 CodeStream also has integrations with the self-hosted GitHub Enterprise, GitLab
-Self-Managed and Jira Software services as well as the JetBrains hosted YouTrack
-cloud service, but these integrations do not require any special work from
-admins.
+Self-Managed, Bitbucket Server and Jira Software services as well as the
+JetBrains hosted YouTrack cloud service, but these integrations do not require
+any special work from admins.
 
 They are setup by CodeStream users and are documented in the user's guide in the
 [integrations
