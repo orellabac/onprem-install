@@ -1,5 +1,12 @@
 # Change Log
 
+## [8.2.1] - 2020-9-16
+
+### Changed
+
+- Adds new `notifications` scope to the GitHub Enterprise instructions to accomodate the pull-request integration
+- Enforces minimum required and suggested versions of the CodeStream extension
+
 ## [8.2.0] - 2020-8-3
 
 ### Added
