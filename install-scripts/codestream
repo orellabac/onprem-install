@@ -829,7 +829,7 @@ releaseSufx=""
 releasePath=""
 installBranch=""
 logCapture=""
-installFromPackage=""
+[ -d $codestreamRoot/.onprem-install ] && installFromPackage=yes || installFromPackage=""
 
 [ -f $codestreamRoot/debug.on ] && debugMode=1 || debugMode=0
 
@@ -922,6 +922,7 @@ case $action in
 	status)
 		docker_status;;
 	stop)
+		echo "hello"
 		stop_containers;;
 	restart)
 		stop_containers; sleep 1; start_containers; sleep 1; docker_status;;
