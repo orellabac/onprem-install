@@ -1,0 +1,87 @@
+#!/bin/bash
+
+testMode=0
+while [ $# -gt 0 ]
+do
+	case $1 in
+	--installation-branch) installationBranch="-b $2"; shift 2;;
+	--test-mode) testMode=1;;
+	*) echo "`basename $0` [--installation-branch branch]"; exit 1;;
+	esac
+done
+
+echo -n "
+This wil make an installation package (tar file) such that you can
+install CodeStream on an air-gapped host.
+
+This computer must have access to the internet with git and
+docker installed. Docker must be running to fetch and save
+images.
+
+Press ENTER to continue..."
+read
+
+mkdir -p $HOME/codestream-package/.codestream/.docker-images || exit 1
+cd $HOME/codestream-package/.codestream || exit 1
+
+# clone the repo
+[ ! -d .onprem-install ] && { git clone --depth 1 $installationBranch https://github.com/teamcodestream/onprem-install .onprem-install || exit 1; }
+
+# put the codestream script in place
+[ $testMode -eq 1 ]&& { cp $0 . || cp .onprem-install/install-scripts/codestream . }
+chmod +x ./codestream || exit 1
+
+# generate a uuid
+uuid=`curl -s https://www.uuidtools.com/api/generate/timestamp-first|cut -f2 -d'"'`
+[ -z "$uuid" ] && echo "unable to generate an installation ID" >&2 && exit 1
+echo $uuid >.UUID
+
+cp .onprem-install/docs/src/assets/terms.txt terms.txt || exit 1
+
+# download the docker containers and save them
+apiRepo=""
+broadcasterRepo=""
+mailoutRepo=""
+rabbitmqRepo=""
+pythonRepo=""
+. .onprem-install/versions/preview-single-host.ver || exit 1
+[ -z "$apiRepo" ] && apiRepo="teamcodestream/api-onprem"
+[ -z "$broadcasterRepo" ] && broadcasterRepo="teamcodestream/broadcaster-onprem"
+[ -z "$mailoutRepo" ] && mailoutRepo="teamcodestream/mailout-onprem"
+[ -z "$rabbitmqRepo" ] && rabbitmqRepo="teamcodestream/rabbitmq-onprem"
+[ -z "$pythonRepo" ] && pythonRepo="teamcodestream/dt-python3"
+
+echo "Downloading docker images"
+docker pull $apiRepo:$apiDockerVersion || exit 1
+docker pull $broadcasterRepo:$broadcasterDockerVersion || exit 1
+docker pull $mailoutRepo:$mailoutDockerVersion || exit 1
+docker pull $rabbitmqRepo:$rabbitDockerVersion || exit 1
+docker pull $pythonRepo:$dtPython3DockerVersion || exit 1
+docker pull mongo:$mongoDockerVersion || exit 1
+
+echo "saving docker images"
+docker save -o .docker-images/api.$apiDockerVersion.docker $apiRepo:$apiDockerVersion || exit 1
+docker save -o .docker-images/broadcaster.$broadcasterDockerVersion.docker $broadcasterRepo:$broadcasterDockerVersion || exit 1
+docker save -o .docker-images/mailout.$mailoutDockerVersion.docker $mailoutRepo:$mailoutDockerVersion || exit 1
+docker save -o .docker-images/rabbitmq.$rabbitDockerVersion.docker $rabbitmqRepo:$rabbitDockerVersion || exit 1
+docker save -o .docker-images/python.$dtPython3DockerVersion.docker $pythonRepo:$dtPython3DockerVersion || exit 1
+docker save -o .docker-images/mongo.$mongoDockerVersion.docker mongo:$mongoDockerVersion || exit 1
+
+echo "Creating tarfile pkg"
+(cd .. && tar -cvzf codestream-pkg.$onPremVersion.tgz .codestream) || exit 1
+
+echo "Installation package created:"
+ls -l $HOME/codestream-package/codestream-pkg.$onPremVersion.tgz
+
+echo "
+Copy the file to the home directory of the target host OS and run these commands:
+
+Untar the package:
+	tar -xzf ~/codestream-pkg.$onPremVersion.tgz
+
+For a new installation:
+	~/.codestream/codestream --quickstart --package
+
+For an update:
+	~/.codestream/codestream --update-containers --package
+"

@@ -11,7 +11,7 @@ Usage:
     https//docs.codestream.com/onprem/
 
   Quick Start
-    $cmd --quickstart                        # Configure and start CodeStream
+    $cmd --quickstart                        # Configure and start CodeStream from the internet
 
   Container Control
     $cmd [-M] -a { install | start | stop | restart | reset | status | start_mongo }
@@ -103,7 +103,11 @@ function make_self_signed_cert {
 
 function get_uuid {
 	# curl -s https://www.uuidtools.com/api/decode/9084b876-4209-4e84-91d4-a7221c63ad65 | python3 -m json.tool
-	local uuid=$(curl -s https://www.uuidtools.com/api/generate/timestamp-first|cut -f2 -d'"')
+	if [ -z "$installFromPackage" ]; then
+		local uuid=$(curl -s https://www.uuidtools.com/api/generate/timestamp-first|cut -f2 -d'"')
+	else
+		local uuid=$(cat $codestreamRoot/.UUID)
+	fi
 	[ -z "$uuid" ] && echo "unable to generate an installation ID" >&2 && exit 1
 	echo $uuid
 }
@@ -118,8 +122,13 @@ function fetch_utilities {
 	do
 		if [ ! -f $codestreamRoot/$u -o -n "$force_fl" ]; then
 			# echo "Fetching $u ..."
-			curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/install-scripts/util/$u -o $codestreamRoot/util/$u -s
-			[ $? -ne 0 ] && echo "error fetching $u" && exit 1
+			if [ -z "$installFromPackage" ]; then
+				curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/install-scripts/util/$u -o $codestreamRoot/util/$u -s
+				[ $? -ne 0 ] && echo "error fetching $u" && exit 1
+			else
+				cp $codestreamRoot/.onprem-install/install-scripts/util/$u $codestreamRoot/util/$u
+				[ $? -ne 0 ] && echo "error copying $u from .onprem-install" && exit 1
+			fi
 			chmod 750 $codestreamRoot/util/$u
 		fi
 	done
@@ -127,12 +136,16 @@ function fetch_utilities {
 
 # download the latest version of this script in place (then immediately exit)
 function update_myself {
-	fetch_utilities --force
-	(
-		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/install-scripts/codestream -o $codestreamRoot/codestream -s
-		chmod +x $codestreamRoot/codestream
-	)
-	# this is special - WE GO NO FURTHER AFTER UPDATING OURSELF BECAUSE THE BASH INTERPRETER IS LIKELY TO BARF
+	if [ -z "$installFromPackage" ]; then
+		fetch_utilities --force
+		(
+			curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/install-scripts/codestream -o $codestreamRoot/codestream -s
+			chmod +x $codestreamRoot/codestream
+		)
+		# this is special - WE GO NO FURTHER AFTER UPDATING OURSELF BECAUSE THE BASH INTERPRETER IS LIKELY TO BARF
+	else
+		echo "Running from a package update. --update_myself does not apply"
+	fi
 	exit 0
 }
 
@@ -145,8 +158,13 @@ function update_myself {
 #      2   error during update
 function update_container_versions {
 	local undoId="$1"
-	curl -s --fail --output $codestreamRoot/container-versions.new "$versionUrl$releaseSufx"
-	[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl$releaseSufx)" && return 2
+	if [ -z "$installFromPackage" ]; then
+		curl -s --fail --output $codestreamRoot/container-versions.new "$versionUrl$releaseSufx"
+		[ $? -ne 0 ] && echo "Failed to download container versions ($versionUrl$releaseSufx)" && return 2
+	else
+		cp $codestreamRoot/$versionUrlFile$releaseSufx $codestreamRoot/container-versions.new
+		[ $? -ne 0 ] && echo "failed: cp $codestreamRoot/$versionUrlFile$releaseSufx $codestreamRoot/container-versions.new" && return 2
+	fi
 	if [ ! -f $codestreamRoot/container-versions ]; then
 		/bin/mv $codestreamRoot/container-versions.new $codestreamRoot/container-versions || return 2
 		return 0
@@ -208,14 +226,19 @@ function migrate_config_file_template {
 function get_config_file_template {
 	local undoId="$1" config="$2"
 	[ -z "$config" ] && config=quickstart
-	[ $debugMode -eq 1 -a -n "$config" ] && echo "Using $config config template"
+	[ $debugMode -eq 1 -a -n "$config" ] && echo "Using $config config template (localClone=$localClone)"
 	if [ -f $codestreamRoot/single-host-preview-cfg.json.template ]; then
 		[ -z "$undoId" ] && undoId=$(undo_stack_id "" "called get_config_file_template()")
 		cp -p $codestreamRoot/single-host-preview-cfg.json.template $codestreamRoot/.undo/$undoId
 	fi
 	echo "Fetching updated config file template..."
-	[ $debugMode -eq 1 ] && echo curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/config-templates${releasePath}/single-host-preview-$config-cfg.json.template -o $codestreamRoot/single-host-preview-cfg.json.template >&2
-	curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/config-templates${releasePath}/single-host-preview-$config-cfg.json.template -o $codestreamRoot/single-host-preview-cfg.json.template || { echo "error getting config template" >&2; exit 1; }
+	if [ -z "$installFromPackage" ]; then
+		[ $debugMode -eq 1 ] && echo curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/config-templates${releasePath}/single-host-preview-$config-cfg.json.template -o $codestreamRoot/single-host-preview-cfg.json.template >&2
+		curl -s https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/config-templates${releasePath}/single-host-preview-$config-cfg.json.template -o $codestreamRoot/single-host-preview-cfg.json.template || { echo "error getting config template" >&2; exit 1; }
+	else
+		[ $debugMode -eq 1 ] && echo cp $codestreamRoot/onprem-install/config-templates/single-host-preview-${config}-cfg.json.template $codestreamRoot/single-host-preview-cfg.json.template >&2
+		cp $codestreamRoot/.onprem-install/config-templates/single-host-preview-quickstart-cfg.json.template $codestreamRoot/single-host-preview-cfg.json.template || { echo "error copying config template" >&2; exit 1; }
+	fi
 	chmod 660 $codestreamRoot/single-host-preview-cfg.json.template || exit 1
 }
 
@@ -293,6 +316,18 @@ function run_api_utility {
 	return $?
 }
 
+function load_docker_containers_from_package {
+	echo "loading docker images from package"
+	set -x
+	docker load -i .docker-images/api.$apiDockerVersion.docker || exit 1
+	docker load -i .docker-images/broadcaster.$broadcasterDockerVersion.docker || exit 1
+	docker load -i .docker-images/mailout.$mailoutDockerVersion.docker || exit 1
+	docker load -i .docker-images/rabbitmq.$rabbitDockerVersion.docker || exit 1
+	docker load -i .docker-images/python.$dtPython3DockerVersion.docker || exit 1
+	docker load -i .docker-images/mongo.$mongoDockerVersion.docker || exit 1
+	set +x
+}
+
 # Execute the docker update procedure
 function update_containers_except_mongo {
 	local parm nostart nobackup force
@@ -300,6 +335,7 @@ function update_containers_except_mongo {
 		[ $parm == "--no-start" ] && nostart=1
 		[ $parm == "--no-backup" ] && nobackup=1
 		[ $parm == "--force" ] && force=1
+		[ $parm == "--package" ] && installFromPackage=yes
 	done
 	local undoId=$(undo_stack_id "" "full container update procedure")
 	backup_dot_codestream $undoId
@@ -311,6 +347,7 @@ function update_containers_except_mongo {
 	[ $rc -eq 2 ] && echo "error updating containers">&2 && exit 1
 	if [ $rc -eq 0  -o  -n "$force" ]; then
 		load_container_versions $undoId
+		[ -n "$installFromPackage" ] && load_docker_containers_from_package
 		update_config_file $undoId
 	else
 		echo "You are already running the latest container versions"
@@ -678,8 +715,10 @@ You'll then need agree to the terms to continue with the installation.
 
 Press ENTER to read our Terms of Service..."
 	read ans
-	curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/docs/src/assets/terms.txt -s -o $codestreamRoot/terms.txt
-	[ $? -ne 0 ] && echo "Could not locate the terms of service!" && exit 1
+	if [ ! -f $codestreamRoot/terms.txt ]; then
+		curl https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/docs/src/assets/terms.txt -s -o $codestreamRoot/terms.txt
+		[ $? -ne 0 ] && echo "Could not locate the terms of service!" && exit 1
+	fi
 	less $codestreamRoot/terms.txt
 	echo -n "
 
@@ -698,13 +737,15 @@ function quickstart {
 		case $1 in
 		--fqhn) _fqhn=$2; shift 2;;
 		--config-only) start=0; shift;;
-		*) echo "`basename $0` --quickstart [--config-only] [--fqhn hostname]"; exit 1;;
+		--package) installFromPackage=yes; shift;;
+		*) echo "`basename $0` --quickstart [--config-only] [--fqhn hostname] [--package]"; exit 1;;
 		esac
 	done
 	[ -z "$_fqhn" ] && _fqhn=`hostname` && echo "using $_fqhn for fully-qualified host name"
 	if [ ! -d $codestreamRoot ]; then
 		echo "creating $codestreamRoot" && mkdir $codestreamRoot && cp -p $0 $codestreamRoot || { echo failed to create $codestreamRoot directory; exit 1; }
 	fi
+	[ -n "$installFromPackage" ] && load_container_versions && load_docker_containers_from_package
 	[ ! -f $codestreamRoot/single-host-preview-cfg.json.template ] && get_config_file_template "" quickstart
 	load_config_cache $_fqhn
 	save_config_cache
@@ -788,6 +829,8 @@ releaseSufx=""
 releasePath=""
 installBranch=""
 logCapture=""
+installFromPackage=""
+
 [ -f $codestreamRoot/debug.on ] && debugMode=1 || debugMode=0
 
 # The release file determines which docker repos and image versions we use (beta, pre-release or GA (null string))
@@ -799,6 +842,7 @@ logCapture=""
 # The url (or base url) of the file containing version information for this release
 versionUrl="https://raw.githubusercontent.com/TeamCodeStream/onprem-install/$installBranch/versions/preview-single-host.ver"
 [ -f $codestreamRoot/config-cache ] && . $codestreamRoot/config-cache
+versionUrlFile=".onprem-install/versions/preview-single-host.ver"
 
 ### ------ Checkout this host system for compatibility
 check_env || exit 1
