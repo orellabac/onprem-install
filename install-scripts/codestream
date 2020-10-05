@@ -275,11 +275,11 @@ function apply_support_package {
 
 	[ ! -d $codestreamRoot/support ] && { mkdir $codestreamRoot/support || return 1; }
 	local supportId=`date +%Y%m%d.%H%M%S.%s`
-	local supportDir="$HOME/.codestream/support/$supportId"
+	local supportDir="$codestreamRoot/support/$supportId"
 	echo "mkdir $supportDir" && mkdir $supportDir || return 1
 
 	if [ "`echo $supportPkg | grep -c ^https:`" -gt 0 ]; then
-		echo "Fetching support package with curl"
+		echo "curl $supportPkg -o $supportDir/$supportPkgFile -s"
 		curl $supportPkg -o $supportDir/$supportPkgFile -s || { echo "could not download support package" && return 1; }
 	else
 		[ ! -f "$supportPkg" ] && echo "$supportPkg not found" && return 1
@@ -290,8 +290,8 @@ function apply_support_package {
 	tar -xzf $supportPkgFile || { echo "untar $supportPkgFile failed" && return 1; }
 
 	[ ! -f start-here.sh ] && echo "missing start script" && return 1
-	echo running package - /bin/bash ./start-here.sh "$@"
-	/bin/bash ./start-here.sh "$@"
+	echo running package - /bin/bash ./start-here.sh "$codestreamRoot" "$@"
+	/bin/bash ./start-here.sh "$codestreamRoot" "$@"
 	return $?
 }
 
@@ -922,7 +922,6 @@ case $action in
 	status)
 		docker_status;;
 	stop)
-		echo "hello"
 		stop_containers;;
 	restart)
 		stop_containers; sleep 1; start_containers; sleep 1; docker_status;;
