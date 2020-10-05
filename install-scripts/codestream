@@ -319,12 +319,12 @@ function run_api_utility {
 function load_docker_containers_from_package {
 	echo "loading docker images from package"
 	set -x
-	docker load -i .docker-images/api.$apiDockerVersion.docker || exit 1
-	docker load -i .docker-images/broadcaster.$broadcasterDockerVersion.docker || exit 1
-	docker load -i .docker-images/mailout.$mailoutDockerVersion.docker || exit 1
-	docker load -i .docker-images/rabbitmq.$rabbitDockerVersion.docker || exit 1
-	docker load -i .docker-images/python.$dtPython3DockerVersion.docker || exit 1
-	docker load -i .docker-images/mongo.$mongoDockerVersion.docker || exit 1
+	docker load -i $codestreamRoot/.docker-images/api.$apiDockerVersion.docker || exit 1
+	docker load -i $codestreamRoot/.docker-images/broadcaster.$broadcasterDockerVersion.docker || exit 1
+	docker load -i $codestreamRoot/.docker-images/mailout.$mailoutDockerVersion.docker || exit 1
+	docker load -i $codestreamRoot/.docker-images/rabbitmq.$rabbitDockerVersion.docker || exit 1
+	docker load -i $codestreamRoot/.docker-images/python.$dtPython3DockerVersion.docker || exit 1
+	docker load -i $codestreamRoot/.docker-images/mongo.$mongoDockerVersion.docker || exit 1
 	set +x
 }
 
