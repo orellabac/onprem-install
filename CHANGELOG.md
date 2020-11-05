@@ -1,5 +1,16 @@
 # Change Log
 
+## [8.2.3] - 2020-11-5
+
+### Added
+
+- Adds backend support for new GitHub authentication flow in VS Code
+- Adds the ability to add, edit or remove ranges when editing a comment or issue
+
+### Fixed
+
+- Fixes an issue where the confirmation email wasn't being sent when a user changes their email address
+
 ## [8.2.2] - 2020-9-29
 
 ### Fixed
