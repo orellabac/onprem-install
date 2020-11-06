@@ -13,6 +13,7 @@
 
 {
 	"apiServer": {
+		"altBroadcasterHost": null,
 		"authOrigin": null,
 		"callbackEnvironment": "onprem",
 		"confirmCodeExpiration": 604800000,
@@ -33,6 +34,7 @@
 		"phoneHomeUrl": "https://phone-home.codestream.com",
 		"port": 80,
 		"publicApiUrl": "http://{{FQHN}}",
+		"securePort": 12078,
 		"sessionAwayTimeout": 600000,
 		"showConfig": false,
 		"signupTokenExpiration": 600000,
@@ -40,6 +42,7 @@
 	},
 	"broadcastEngine": {
 		"codestreamBroadcaster": {
+			"altApiHost": null,
 			"host": "{{FQHN}}",
 			"ignoreHttps": true,
 			"logger": {
@@ -52,6 +55,7 @@
 				"api": "{{SECRET_BROADCAST_API}}",
 				"auth": "{{SECRET_BROADCAST_AUTH}}"
 			},
+			"securePort": 12075,
 			"showConfig": false
 		}
 	},
@@ -65,6 +69,7 @@
 	},
 	"emailDeliveryService": {
 		"NodeMailer": {
+			"disabled": false,
 			"host": null,
 			"password": null,
 			"port": 587,
