@@ -7,10 +7,16 @@ module.exports = {
 	pathPrefix: '/onprem',
 	plugins: [
 		{
+			resolve: 'gatsby-plugin-google-analytics',
+			options: {
+				trackingId: 'UA-107525804-1'
+			},
+		},
+		{
 			resolve: 'gatsby-theme-apollo-docs',
 			options: {
 				// THIS SECTION SHOULD BE THE SAME ACROSS ALL CODESTREAM DOC SITES
-				codeStreamDocModule: thisDocModule,  // this is definitely NOT ideal - see docset-menu.js
+				codeStreamDocModule: thisDocModule, // this is definitely NOT ideal - see docset-menu.js
 				siteName: thisDocModule,
 				// pageTitle: thisDocModule, // for social cards, ...
 				menuTitle: codeStreamCfg.ecoSystem,
@@ -40,7 +46,7 @@ module.exports = {
 						'serviceconfigs/ssl',
 						'serviceconfigs/outbound',
 						'serviceconfigs/telemetry',
-						'serviceconfigs/awsAlb'
+						'serviceconfigs/awsAlb',
 					],
 					'Messaging Integrations': [
 						'messaging/network',
@@ -57,15 +63,9 @@ module.exports = {
 						'issues/jira',
 						'issues/trello',
 					],
-					'Other Integrations': [
-						'otherintegrations/okta'
-					],
-					'IDE Settings': [
-						'ide/overview',
-					],
-					FAQ: [
-						'faq/passwords',
-					],
+					'Other Integrations': ['otherintegrations/okta'],
+					'IDE Settings': ['ide/overview'],
+					FAQ: ['faq/passwords'],
 				},
 			},
 		},
