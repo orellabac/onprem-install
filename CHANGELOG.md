@@ -1,5 +1,11 @@
 # Change Log
 
+## [8.2.6] - 2020-11-24
+
+### Changed
+
+- Backout change to Slack OAuth v2.
+
 ## [8.2.5] - 2020-11-24
 
 ### Added
