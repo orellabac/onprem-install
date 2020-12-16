@@ -1,5 +1,12 @@
 # Change Log
 
+## [8.2.7] - 2020-12-17
+
+### Added
+
+- Adds backend support for people joining teams based on repository access
+- Adds backend support for admins restricting available integrations and authentication options
+
 ## [8.2.6] - 2020-11-24
 
 ### Changed
