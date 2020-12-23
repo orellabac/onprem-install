@@ -3,7 +3,7 @@ title: Jira (Atlassian Cloud)
 ---
 
 In order to integrate CodeStream with Jira on the Atlassian Cloud platform,
-you'll need tp create a Developer App to provide credentials to use their REST
+you'll need to create a Developer App to provide credentials to use their REST
 API.
 
 ## Login to Atlassian Cloud and Go to Developer Apps
