@@ -30,31 +30,38 @@ Take note of the Client ID and Secret.
 
 ## Add your REST API Permissions and Callback URL
 
-Select the **+ Add** link on the navagation bar to bring up the Feature options
-page and add the **Jira REST Platform API** feature.
+Select **Permissions** on the navagation bar to bring up the api selections.
 
-![feature](../assets/images/issue/jira/04 Add Rest API.png)
+![feature](../assets/images/issue/jira/04 Permissions.png)
 
-Select the **Jira platform REST API** option which now exists on the nav bar and
-update the permissions to match this screen shot.
+Select the **Jira platform REST API** option and then the configurue button.
 
 ![jira perms](../assets/images/issue/jira/05 Add Jira REST API.png)
 
-Now select **OAuth 2.0 (3LO)** on the left navagation bar and add your
-callback URL. It should reference your company's CodeStream On-Prem hostname
-with this path:
+Add the 3 scopes pointed to by the arrows above.
+
+
+## Setup the Authorization
+
+Now select **Authorization** on the left navagation bar and then the
+**Cunfigure** action button.
+
+![jira perms](../assets/images/issue/jira/06a Authorization.png)
+
+Now add your callback URL. It should reference your company's CodeStream On-Prem
+hostname with this path:
+
 `https://codestream-onprem.mycompany.com/no-auth/provider-token/jira`
 
 ![callback](../assets/images/issue/jira/06 Add Callback.png)
 
 
-## Distribute the App
+## Take Note of the Client Id and Secret
 
-For anyone other than you to use the app, you must publicly distribute it.
-Select the **Distribute** option on the nav bar, complete the form and make your
-app publicly available.
+Click on **Settings** on the left nav bar and take note of the Client ID
+and Secret.
 
-![distribute](../assets/images/issue/jira/07 Distribute the App.png)
+![jira perms](../assets/images/issue/jira/08 Settings.png)
 
 ## Update the CodeStream Config and Restart
 
