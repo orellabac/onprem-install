@@ -65,7 +65,10 @@ module.exports = {
 					],
 					'Other Integrations': ['otherintegrations/okta'],
 					'IDE Settings': ['ide/overview'],
-					FAQ: ['faq/passwords'],
+					FAQ: [
+						'faq/passwords',
+						'faq/airgapped'
+					],
 				},
 			},
 		},
