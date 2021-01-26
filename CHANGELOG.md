@@ -1,5 +1,11 @@
 # Change Log
 
+## [8.2.14] - 2021-1-26
+
+### Added
+
+- Additional changes to support the GitLens integration
+
 ## [8.2.13] - 2021-1-25
 
 ### Added
