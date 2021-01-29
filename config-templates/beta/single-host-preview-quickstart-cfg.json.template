@@ -1,17 +1,32 @@
-// Profile: creates the on-prem single host preview template
+// THIS FILE IS AUTOMTICALLY GENERATED - DO NOT EDIT !!
+// Profile: shared/codestream_configs/profiles/onprem-single-host-preview-template.json
 //
-// - Storage:        mongo
-// - Broadcast:      codestream broadcaster
-// - Queuing:        rabbitMQ
-// - Outbound SMTP:  NodeMailer
-// - Telemetry:      Segment production
+// CodeStream On-Prem Config
 //
-// - environments (profiles):
+// - Storage:          mongo
+// - Broadcaster:      codestream broadcaster
+// - Queuing:          rabbitMQ
+// - Outbound SMTP:    NodeMailer
+//
+// - environments:
 // -    minimal (default): onprem template that includes ssl and outbound email
 // -    quickstart:        onprem template without ssl or email
-// -    local:             local development template
+// -    local:             local development template (codestream sandbox)
+// -    open-development:  open core development (new database default)
+// -    onprem-slh-quickstart:  default onprem quickstart for Single Linux Host
 
 {
+	"adminServer": {
+		"adminServerDisabled": false,
+		"logger": {
+			"consoleOk": true,
+			"debugOk": false,
+			"directory": "${OPADM_LOGS}"
+		},
+		"port": 12076,
+		"securePort": 12077,
+		"showConfig": false
+	},
 	"apiServer": {
 		"altBroadcasterHost": null,
 		"authOrigin": null,
