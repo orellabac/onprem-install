@@ -1,0 +1,5 @@
+SB_TYPE=onprem_install
+SB_PREFIX=OPI
+GIT_ORIGIN=git@github.com:teamcodestream/onprem-install
+SB_PROJECT_PATH=onprem-install
+# SB_DEPS=a:b:c
