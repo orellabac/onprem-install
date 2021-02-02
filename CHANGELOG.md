@@ -1,5 +1,12 @@
 # Change Log
 
+## [8.2.15] - 2021-2-2
+
+### Added
+
+- Adds a new one-time email/toast notification when you have an open feedback request assigned to you that hasn't had activity in 24 hours
+- Adds new reminder invitations for teammates that haven't yet joined CodeStream
+
 ## [8.2.14] - 2021-1-26
 
 ### Added
