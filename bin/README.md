@@ -32,8 +32,9 @@ with a brief, one line description. For a command to appear in this listing
 it must follow the naming convention above, and contain a single line
 comment in one of the following forms:
 ```
-# desc# here is a one line description
-// desc// here is a one line description
+    # desc# here is a one line description that works with bash and python
+
+    // desc// here is a one line description that works with javascript
 ```
 
 Doing so gives you this, for example:

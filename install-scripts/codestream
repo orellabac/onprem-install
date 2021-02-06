@@ -543,7 +543,6 @@ function quickstart {
 	local _fqhn=`hostname`
 	local _mongoUrl=mongodb://localhost/codestream
 	local interactive=1
-	local startContainers=1
 	local _x
 	# FIXME: would be better if we did not hard code /opt/api/
 	local apiEnv="--env CS_API_DEFAULT_CFG_FILE=/opt/api/codestream-server/api_server/etc/configs/onprem-slh-quickstart.json"
@@ -556,7 +555,6 @@ function quickstart {
 		--bcast-port) _bcastPort=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_BROADCASTER_PORT=$2"; shift 2;;
 		--mongo-url) _mongoUrl=$2; shift 2;;
 		--agree-to-terms) interactive=0; shift;;
-		--no-start) startContainers=0; shift;;
 		*) echo "bad usage"; exit 1;;
 		esac
 	done
@@ -582,7 +580,7 @@ If this is not what you want, press CTRL-C and specify additional options:   $0 
 	load_container_versions
 	[ -n "$CS_INSTALL_FROM_PKG" ] && load_docker_containers_from_package
 
-	[ $startContainers -eq 1 ] && start_containers --with-mongo $apiEnv || echo "--no-start requested. All done."
+	start_containers --with-mongo $apiEnv
 	exit
 }
 
