@@ -1,4 +1,4 @@
-apiDockerVersion="8.2.23-2598"
+apiDockerVersion="8.2.23-2599"
 apiRepo="teamcodestream/api-onprem-dev"
 broadcasterDockerVersion="8.2.21-265"
 broadcasterRepo="teamcodestream/broadcaster-onprem-dev"
