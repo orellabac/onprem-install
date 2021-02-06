@@ -1,0 +1,6 @@
+#!/bin/bash
+
+[ -z "$CS_RESET_INSTALLATION_ACK" ] && echo "you must export CS_RESET_INSTALLATION_ACK=1 to run this. It will wipe the db" && exit 1
+./codestream --reset || exit 1
+rm -rf util/ mongo.url terms.txt container-versions
+docker volume rm $(docker volume ls |grep -v VOL|awk '{print $2}')

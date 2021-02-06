@@ -1,0 +1,18 @@
+
+
+#desc# onprem SLH docker playground
+
+#playgroundName# onprem
+#sandboxTypes# onprem_install
+#sandboxes# {{ SBNAME_onprem_install }}
+#environment# {{ OPI_ENV }}
+
+dt_load {{ SBNAME_onprem_install }}
+
+cd $OPI_DATA
+
+if [ "$1" == start ]; then
+	./codestream --start
+elif [ "$1" == stop ]; then
+	./codestream --stop
+fi

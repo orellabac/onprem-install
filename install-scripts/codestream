@@ -10,12 +10,12 @@ Usage:
 
     https//docs.codestream.com/onprem/
 
-  Quick Start                                               # Download CodeStream On-Prem and start it
-    $cmd --quickstart [--public-host <hostname-or-ip>] [--api-port <port>]
-                      [--bcast-port <port>] [--admin-port <port>] [--mongo-url <url>]
+  QuickStart
+    $cmd --quickstart [--public-host <hostname-or-ip>] [--api-port <port>] \\
+                            [--bcast-port <port>] [--admin-port <port>] [--mongo-url <url>]
 
   Container Control
-    $cmd { --start | --stop | --restart | --reset | --status } [--no-mongo]
+    $cmd { --start | --stop | --restart | --reset | --status } [--not-mongo]
     $cmd --start-mongo                                      # start the mongo container only
 
   Updates & Backups
@@ -35,24 +35,15 @@ Usage:
     $cmd --undo-stack                                       # print the undo stack
     $cmd --run-python-script <script> <opts>                # run a python script using the codestream python container
     $cmd --make-self-signed-cert <hostName>                 # create a key and self-signed SSL certificate (requires openssl)
-"
-	if [ "$1" == help ]; then
-		echo "
-
-    status       check the docker status of the containers
-    start        run or start the CodeStream containers
-    stop         stop the CodeStream containers
-    restart      stop then start the CodeStream containers
-    reset        stop and remove the containers
-    start-mongo  start the mongodb container only
+    $cmd --api-shell                                        # shell prompt in api container
+    $cmd --cfg-tool [options]                               # run mongo config loader tool
 
         >>>  mongo data _should_ persist following a mongo container reset, but  <<<
         >>>  make sure you back up the data with '--backup' beforehand.          <<<
 
     Note: touch 'mongo.off' if you're providing your own mongo db and don't want
-    to run the docker container included here.
+    to run the mongodb docker container included here.
 "
-	fi
 	exit 1
 }
 
@@ -216,9 +207,9 @@ function update_containers_except_mongo {
 		# [ $parm == "--package" ] && CS_INSTALL_FROM_PKG=yes
 	done
 	local undoId=$(undo_stack_id "" "full container update procedure")
-	stop_containers --no-mongo
+	stop_containers --not-mongo
 	[ -z "$nobackup" ] && { backup_dot_codestream $undoId && backup_mongo $CS_MONGO_URL $undoId || exit 1; }
-	remove_containers --no-mongo
+	remove_containers --not-mongo
 	update_container_versions $undoId
 	local rc=$?
 	[ $rc -eq 2 ] && echo "error updating containers">&2 && exit 1
@@ -291,7 +282,7 @@ function backup_mongo {
 	# docker run --rm mongo:$mongoDockerVersion mongodump --host $host --archive --gzip | cat > $CS_ROOT/backups/$filename
 	docker run --rm --network=host mongo:$mongoDockerVersion mongodump --uri $mongoUrl --archive --gzip | cat > $CS_ROOT/backups/$filename
 	[ $? -ne 0 -o \( ! -s $CS_ROOT/backups/$filename \) ] && echo "backup failed" >&2 && return 1
-	echo "Backed up $host to $CS_ROOT/backups/$filename"
+	echo "Backed up to $CS_ROOT/backups/$filename"
 	return 0
 }
 
@@ -362,6 +353,12 @@ function run_support_script_via_api {
 	return $?
 }
 
+function api_interactive {
+	echo docker run -it --rm -v $CS_ROOT:/opt/config --network=host $apiRepo:$apiDockerVersion /bin/bash "$@"
+	docker run -it --rm -v $CS_ROOT:/opt/config --network=host $apiRepo:$apiDockerVersion /bin/bash "$@"
+	exit $?
+}
+
 
 ############################################################
 ## Container Control
@@ -388,36 +385,37 @@ function run_or_start_container {
 	shift
 	[ "$state" == "running" ] && echo "Container $container is already running" >&2 && return
 	if [ "$state" == "exited" ]; then
-		# echo "docker start $container"
+		echo "docker start $container"
 		docker start $container
 		return
 	fi
-	local mongoEnvParm=""
-	[ $CS_USE_ADMIN -eq 1 ] && $mongoEnvParm="--env CSSVC_CFG_URL=$CS_MONGO_URL"
+	local containerEnv=""
+	[ $CS_USE_ADMIN -eq 1 -a -f $CS_ROOT/.container-run-params ] && containerEnv=`cat $CS_ROOT/.container-run-params`
+	[ $CS_USE_ADMIN -eq 1 ] && containerEnv="$containerEnv --env CSSVC_CFG_URL=$CS_MONGO_URL --env CSSVC_CFG_FILE" && export CSSVC_CFG_FILE=""
 	[ -n "$state" ] && echo "Container $container is in an unknown state ($state). Aborting" >&2 && return
 	echo "running container $container (docker run)"
 	case $container in
-	csmongo)
-		echo docker run -d -P --network="host" -v csmongodata:/data/db --name csmongo mongo:$mongoDockerVersion
-		docker run -d -P --network="host" -v csmongodata:/data/db --name csmongo mongo:$mongoDockerVersion;;
-	csrabbitmq)
-		echo docker run -d -P --network="host" --name csrabbitmq "$@" $rabbitmqRepo:$rabbitDockerVersion
-		docker run -d -P --network="host" --name csrabbitmq "$@" $rabbitmqRepo:$rabbitDockerVersion;;
-	csbcast)
-		echo docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csbcast $mongoEnvParm "$@" $broadcasterRepo:$broadcasterDockerVersion
-		docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csbcast $mongoEnvParm "$@" $broadcasterRepo:$broadcasterDockerVersion;;
-	csapi)
-		echo docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csapi $mongoEnvParm "$@" $apiRepo:$apiDockerVersion
-		docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csapi $mongoEnvParm "$@" $apiRepo:$apiDockerVersion;;
-	csmailout)
-		echo docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csmailout $mongoEnvParm "$@" $mailoutRepo:$mailoutDockerVersion
-		docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csmailout $mongoEnvParm "$@" $mailoutRepo:$mailoutDockerVersion;;
-	csadmin)
-		echo docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csadmin $mongoEnvParm "$@" $opadmRepo:$opadmDockerVersion
-		docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csadmin $mongoEnvParm "$@" $opadmRepo:$opadmDockerVersion;;
-	*)
-		echo "don't know how to start container $container" >&2
-		return;;
+		csmongo)
+			echo docker run -d -P --network="host" -v csmongodata:/data/db --name csmongo mongo:$mongoDockerVersion
+			docker run -d -P --network="host" -v csmongodata:/data/db --name csmongo mongo:$mongoDockerVersion;;
+		csrabbitmq)
+			echo docker run -d -P --network="host" --name csrabbitmq "$@" $rabbitmqRepo:$rabbitDockerVersion
+			docker run -d -P --network="host" --name csrabbitmq "$@" $rabbitmqRepo:$rabbitDockerVersion;;
+		csapi)
+			echo docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csapi $containerEnv "$@" $apiRepo:$apiDockerVersion
+			docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csapi $containerEnv "$@" $apiRepo:$apiDockerVersion;;
+		csbcast)
+			echo docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csbcast $containerEnv "$@" $broadcasterRepo:$broadcasterDockerVersion
+			docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csbcast $containerEnv "$@" $broadcasterRepo:$broadcasterDockerVersion;;
+		csmailout)
+			echo docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csmailout $containerEnv "$@" $mailoutRepo:$mailoutDockerVersion
+			docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csmailout $containerEnv "$@" $mailoutRepo:$mailoutDockerVersion;;
+		csadmin)
+			echo docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csadmin $containerEnv "$@" $opadmRepo:$opadmDockerVersion
+			docker run -d -P -v $CS_ROOT:/opt/config --network="host" --name csadmin $containerEnv "$@" $opadmRepo:$opadmDockerVersion;;
+		*)
+			echo "don't know how to start container $container" >&2
+			return;;
 	esac
 }
 
@@ -425,7 +423,8 @@ function run_or_start_container {
 function start_containers {
 	local flags="$1"
 	[ -n "$1" ] && shift    # the rest of the parms will be passed to the API server
-	if [ $CS_RUN_MONGO -eq 1  -a  "$flags" != "--no-mongo" ]; then
+	[ "$CS_DEBUG_MODE" -eq 1 ] && echo "start_containers(): $flags , $*"
+	if [ $CS_RUN_MONGO -eq 1  -a  "$flags" != "--not-mongo" ]; then
 		run_or_start_container csmongo
 		sleep 5
 	fi
@@ -442,10 +441,12 @@ function start_containers {
 # high-level routine to stop all containers
 function stop_containers {
 	local flags="$1"
+	shift
+	local containers="$CS_CONTAINERS"
+	[ -n "$1" ] && flags="--not-mongo" && containers="$@"
 	local c
 	local state
-	local containers="$CS_CONTAINERS"
-	[ $CS_RUN_MONGO -eq 1  -a  "$flags" != "--no-mongo" ] && containers="$containers csmongo"
+	[ $CS_RUN_MONGO -eq 1  -a  "$flags" != "--not-mongo" ] && containers="$containers csmongo"
 	echo "Stopping containers..."
 	for c in $containers
 	do
@@ -466,10 +467,12 @@ function stop_containers {
 # high-level routine to stop all containers
 function remove_containers {
 	local flags="$1"
+	shift
+	local containers="$CS_CONTAINERS"
+	[ -n "$1" ] && flags="--not-mongo" && containers="$@"
 	local c
 	local state
-	local containers="$CS_CONTAINERS"
-	[ $CS_RUN_MONGO -eq 1  -a  "$flags" != "--no-mongo" ] && containers="$containers csmongo"
+	[ $CS_RUN_MONGO -eq 1  -a  "$flags" != "--not-mongo" ] && containers="$containers csmongo"
 	echo "Removing containers..."
 	for c in $containers
 	do
@@ -539,7 +542,11 @@ function quickstart {
 	local _adminPort=8080
 	local _fqhn=`hostname`
 	local _mongoUrl=mongodb://localhost/codestream
-	local apiEnv="--env CS_API_DEFAULT_CFG_FILE=etc/config/onprem-slh-quickstart.json"
+	local interactive=1
+	local startContainers=1
+	local _x
+	# FIXME: would be better if we did not hard code /opt/api/
+	local apiEnv="--env CS_API_DEFAULT_CFG_FILE=/opt/api/codestream-server/api_server/etc/configs/onprem-slh-quickstart.json"
 	while [ $# -gt 0 ]
 	do
 		case $1 in
@@ -548,28 +555,34 @@ function quickstart {
 		--admin-port) _adminPort=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_ADMIN_PORT=$2"; shift 2;;
 		--bcast-port) _bcastPort=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_BROADCASTER_PORT=$2"; shift 2;;
 		--mongo-url) _mongoUrl=$2; shift 2;;
+		--agree-to-terms) interactive=0; shift;;
+		--no-start) startContainers=0; shift;;
 		*) echo "bad usage"; exit 1;;
 		esac
 	done
-	echo "Configuring codestream with public facing:"
-	echo "   Host:              $_fqhn"
-	echo "   API Port:          $_apiPort"
-	echo "   Broadcaster Port:  $_bcastPort"
-	echo "   Admin Port:        $_adminPort"
-	echo "   Mongo URL:         $_mongoUrl"
-	echo
-	echo "If this is not what you want, press CTRL-C and specify --quickstart options."
-	echo
-	echo -n "Press ENTER to continue..."; read x
+	[ $interactive -eq 0 ] && touch $CS_ROOT/.tos-agreed || accept_tos
+	fetch_utilities
+
+	echo "Configuring CodeStream with these public-facing settings:
+    Host             [--public-host] :    $_fqhn
+    API Port         [--api-port]    :    $_apiPort
+    Broadcaster Port [--bcast-port]  :    $_bcastPort
+    Admin Port       [--admin-port]  :    $_adminPort"
+	# Mongo URL:         $_mongoUrl    (--mongo-url)
+	echo -n "
+If this is not what you want, press CTRL-C and specify additional options:   $0 --quickstart [options]
+"
+	[ $interactive -eq 1 ] && { echo -n "Press ENTER to continue..." && read _x; } || echo "interactive mode disabled...continuing..."
 
 	echo $_mongoUrl >$CS_ROOT/mongo.url
 	export CS_MONGO_URL=$_mongoUrl
 	export CS_USE_ADMIN=1
 
 	# air-gapped installations get the docker images pre-loaded from disk
-	[ -n "$CS_INSTALL_FROM_PKG" ] && load_container_versions && load_docker_containers_from_package
+	load_container_versions
+	[ -n "$CS_INSTALL_FROM_PKG" ] && load_docker_containers_from_package
 
-	start_containers --with-mongo $apiEnv
+	[ $startContainers -eq 1 ] && start_containers --with-mongo $apiEnv || echo "--no-start requested. All done."
 	exit
 }
 
@@ -672,37 +685,54 @@ function apply_support_package {
 	return $?
 }
 
+function mongo_config_tool {
+	local outFile="$1"
+	[ ! -f $CS_ROOT/mongo.url ] && echo "installation upgrade required" && exit 1
+	run_script_via_api shared/codestream_configs/bin/mongo-config-loader.js --mongo-url $CS_MONGO_URL "$@"
+	exit $?
+}
 
 ############################################################
 ## Upgrade to On-Prem Admin Server
 ############################################################
 
 function upgrade_to_admin {
-	echo "this isn't ready yet" && exit 1
+	[ $CS_USE_ADMIN -eq 1 ] && echo "Your installatton is already running the admin service" && exit 0
 	local _mongoUrl=`grep mongodb:// $CS_ROOT/codestream-services-config.json |cut -f4 -d\" | head -1`
-	local _adminPort=8080
 	local apiEnv=""
-	while [ $# -gt 0 ]
-	do
+	local _publicUrlWithoutPort="`grep publicApiUrl $CS_ROOT/codestream-services-config.json|cut -f4 -d\"|cut -f1-2 -d:`"
+	local _apiPort="`grep publicApiUrl $CS_ROOT/codestream-services-config.json|cut -f4 -d\"|cut -f3 -d:`"
+	local _adminPort=8080
+	echo $_publicUrlWithoutPort|grep -q ^https && _adminPort=8443
+	[ "$_adminPort" == "$_apiPort" ] && $_adminPort=`expr $_adminPort + 1`
+	while [ $# -gt 0 ];	do
 		case $1 in
-		--admin-port) _adminPort=$2; shift 2;;
-		--mongo-url) _mongoUrl=$2; shift 2;;
-		*) echo "bad usage"; exit 1;;
+			--admin-port) _adminPort=$2; shift 2;;
+			--mongo-url) _mongoUrl=$2; shift 2;;
+			*) echo "bad usage"; exit 1;;
 		esac
 	done
-	echo "You are about to upgrade your CodeStream On-Prem installation to support"
-	echo "the new admin service which will move your configuration into the mongo"
-	echo "database."
-	echo
-	echo "admin port: $_adminPort"
-	echo "mongo url:  $_mongoUrl"
-	echo
-	yesno "Do you want to proceed (y/N)? "
-	[ $? -eq 0 ] && echo "Upgrade aborted" && exit 1
+	local adminUrl="$_publicUrlWithoutPort:$_adminPort"
+	echo "You are about to upgrade your CodeStream On-Prem installation to use
+the new admin service which migrates your configuration into the mongo
+database.
 
-	stop_containers --no-mongo
+Once completed, your codestream-services-config.json file will be moved
+aside and no longer relevant. Any configuration changes should be made
+through the web browser app which will run on the admin port you specify.
+
+   Admin Port       [--admin-port]  :    $_adminPort
+   Mongo Url        [--mongo-url]   :    $_mongoUrl
+   Admin Url                        :    $_adminUrl
+
+If these settings are not to your liking, break out of this script (CTRL-C)
+and use the command line options to change their values
+"
+	yesno "Do you want to proceed with these options (y/N)? " && echo "Upgrade aborted" && exit 1
+
+	stop_containers --not-mongo
 	full_backup
-	remove_containers --no-mongo
+	remove_containers --not-mongo
 
 	echo $_mongoUrl >$CS_ROOT/mongo.url
 	export CS_MONGO_URL=$_mongoUrl
@@ -711,14 +741,19 @@ function upgrade_to_admin {
 	run_script_via_api shared/codestream-configs/bin/mongo-config-loader.js --mongo-url $CS_MONGO_URL --add-cfg-file /opt/config/codestream-services-config.json --desc "import codestream-config-services.json" --import-keys --first-cfg-hook --admin-port $_adminPort || { echo "failed to load config"; exit 1; }
 	mv $CS_ROOT/codestream-services-config.json $CS_ROOT/codestream-services-config.json.loaded-into-db
 
-	start_containers --no-mongo
+	start_containers --not-mongo
 
-	echo "Done. Do the logs look ok?"
-	echo
-	echo "    docker logs csapi"
-	echo "    docker logs csbcast"
-	echo
-	exit
+	echo "Done.
+
+Login to the admin server at $_adminUrl and setup an email address & password.
+
+You can always see the logs with these commands:
+
+    docker logs csapi
+    docker logs csbcast
+    docker logs csadmin
+"
+	exit 0
 }
 
 
@@ -742,10 +777,10 @@ export CS_CONTAINERS="csapi csmailout csbcast csrabbitmq"
 [ -f $CS_ROOT/debug.on ] && export CS_DEBUG_MODE=1 || export CS_DEBUG_MODE=0
 
 # The release file determines which docker repos and image versions we use (beta, pre-release or GA (null string))
-[ -f $CS_ROOT/release ] && { export CS_RELEASE_SUFX=".`cat $CS_ROOT/release`"; export CS_RELEASE_PATH="/`cat $CS_ROOT/release`"; echo "Running $CS_RELEASE_SUFX release of CodeStream" >&2; }
+[ -f $CS_ROOT/release ] && { export CS_RELEASE_SUFX=".`cat $CS_ROOT/release`"; export CS_RELEASE_PATH="/`cat $CS_ROOT/release`"; echo "Release: `basename $CS_RELEASE_PATH`" >&2; }
 
 # installation-branch determines which branch of onprem-install to use when downloading files (master or beta)
-[ -f $CS_ROOT/installation-branch ] && { export CS_INSTALLATION_BRANCH="`cat $CS_ROOT/installation-branch`"; echo "Installation branch is $CS_INSTALLATION_BRANCH" >&2; } || export CS_INSTALLATION_BRANCH="master"
+[ -f $CS_ROOT/installation-branch ] && { export CS_INSTALLATION_BRANCH="`cat $CS_ROOT/installation-branch`"; echo "Installation branch: $CS_INSTALLATION_BRANCH" >&2; } || export CS_INSTALLATION_BRANCH="master"
 
 # mongo server
 [ -z "$CS_MONGO_URL" ] && { [ -f $CS_ROOT/mongo.url ] && export CS_MONGO_URL=`cat $CS_ROOT/mongo.url` || export CS_MONGO_URL="mongodb://localhost/codestream"; }
@@ -763,9 +798,10 @@ check_env || exit 1
 [ $CS_DEBUG_MODE -eq 1 ] && env | grep ^CS_
 
 ### ------ Start parsing command line options
-[ "$1" == "--help" -o -z "$1" ] && usage help
-[ "$1" == "--quickstart" ] && { shift && accept_tos && fetch_utilities && quickstart "$@"; exit $?; }
+[ "$1" == "--help" -o -z "$1" ] && usage
+[ "$1" == "--quickstart" ] && { shift && quickstart "$@"; exit $?; }
 [ "$1" == "--update-myself" ] && update_myself
+[ ! -f $CS_ROOT/container-versions ] && echo "CodeStream On-Prem not installed" && exit 1
 [ "$1" == "--undo-stack" ] && { print_undo_stack; exit $?; }
 [ "$1" == "--apply-support-pkg" ] && shift && { apply_support_package "$@"; exit $?; }
 [ "$1" == "--create-mst-app-pkg" ] && shift && { create_mst_app_pkg "$@"; exit $?; }
@@ -773,6 +809,7 @@ check_env || exit 1
 
 load_container_versions
 
+[ "$1" == "--api-shell" ] && shift && { api_interactive "$@"; exit $?; }
 [ "$1" == "--upgrade-to-admin" ] && shift && { upgrade_to_admin "$@"; exit $?; }
 [ "$1" == "--run-python-script" ] && shift && { run_python_script "$@"; exit $?; }
 [ "$1" == "--run-support-script" ] && { run_support_script_via_api "$2"; exit $?; }
@@ -783,12 +820,20 @@ load_container_versions
 [ "$1" == "--backup" ] && { backup_mongo $CS_MONGO_URL; exit $?; }
 [ "$1" == "--full-backup" ] && { full_backup; exit $?; }
 [ "$1" == "--restore" ] && { [ "$2" == latest ] && { { restore_mongo $CS_MONGO_URL "$(/bin/ls $CS_ROOT/backups/dump_*.gz | tail -1)"; exit $?; } || { restore_mongo $CS_MONGO_URL $2; exit $?; } } }
+[ "$1" == "--cfg-tool" ] && shift && { mongo_config_tool "$@"; exit $?; }
 
+[ "$1" == "-a" ] && echo -e "\nThe -a option is no longer avaiable.\n" && usage
 [ "$1" == "--status" ] && shift && { docker_status; exit; }
 [ "$1" == "--start" ] && shift && { start_containers "$@"; sleep 1; docker_status; exit; }
 [ "$1" == "--stop" ] && shift && { stop_containers "$@"; exit; }
 [ "$1" == "--restart" ] && shift && { stop_containers "$@"; sleep 1; start_containers "$@"; sleep 1; docker_status; exit; }
 [ "$1" == "--reset" ] && shift && { stop_containers "$@"; sleep 1; remove_containers "$@"; exit; }
 [ "$1" == "--start-mongo" ] && shift && { run_or_start_container csmongo; sleep 2; docker_status; exit; }
+
+# undocumented
+[ "$1" == "--run" ] && shift && { [ -n "$1" ] && run_or_start_container "$@" || echo "container name(s) required"; exit $?; }
+[ "$1" == "--reset-some" ] && shift && { [ -n "$1" ] && { stop_containers "" "$@"; remove_containers "" "$@"; } || echo "container name(s) required"; exit $?; }
+[ "$1" == "--replace" ] && shift && { $0 --reset-some "$@"; $0 --run "$@"; exit $?; }
+[ "$1" == "--update-container-versions" ] && shift && { update_container_versions; exit $?; }
 
 usage
