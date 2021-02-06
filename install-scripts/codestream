@@ -110,6 +110,11 @@ function get_uuid {
 #     force-flag       non-null string forces download of all utilities
 function fetch_utilities {
 	local force_fl="$1"
+	if [ $CS_OPI_SANDBOX -eq 1 ]; then
+		[ -z "`ls -d $CS_ROOT/util 2>/dev/null`" ] && echo "linking to $OPI_TOP/install-scripts/util" && ln -s $OPI_TOP/install-scripts/util $OPI_DATA/util
+		echo "Running inside OPI sandbox. No fetch needed."
+		return 0
+	fi
 	[ ! -d $CS_ROOT/util ] && mkdir $CS_ROOT/util
 	for u in dt-merge-json
 	do
@@ -129,6 +134,7 @@ function fetch_utilities {
 
 # download the latest version of this script in place (then immediately exit)
 function update_myself {
+	[ $CS_OPI_SANDBOX -eq 1 ] && echo "Running inside OPI sandbox. Update git repo $OPI_TOP instead of --update-myself" && exit 0
 	if [ -z "$CS_INSTALL_FROM_PKG" ]; then
 		fetch_utilities --force
 		(
@@ -310,7 +316,6 @@ function restore_mongo {
 function full_backup {
 	csRootBase=`basename $CS_ROOT`
 	{ backup_mongo $CS_MONGO_URL && d=`/bin/ls -tr $CS_ROOT/backups|tail -1|cut -f1 -d.|sed -e 's/dump_//'` && cd $CS_ROOT/.. && tar -czpf ~/full-codestream-backup.$d.tgz $csRootBase && echo -e "\nFull backup is here:" && /bin/ls -l ~/full-codestream-backup.$d.tgz || exit 1; }
-	exit 0
 }
 
 
@@ -698,8 +703,8 @@ function upgrade_to_admin {
 	[ $CS_USE_ADMIN -eq 1 ] && echo "Your installatton is already running the admin service" && exit 0
 	local _mongoUrl=`grep mongodb:// $CS_ROOT/codestream-services-config.json |cut -f4 -d\" | head -1`
 	local apiEnv=""
-	local _publicUrlWithoutPort="`grep publicApiUrl $CS_ROOT/codestream-services-config.json|cut -f4 -d\"|cut -f1-2 -d:`"
-	local _apiPort="`grep publicApiUrl $CS_ROOT/codestream-services-config.json|cut -f4 -d\"|cut -f3 -d:`"
+	local _publicUrlWithoutPort=`grep publicApiUrl $CS_ROOT/codestream-services-config.json | cut -f4 -d\" | cut -f1-2 -d:`
+	local _apiPort=`grep publicApiUrl $CS_ROOT/codestream-services-config.json | cut -f4 -d\" | cut -f3 -d:`
 	local _adminPort=8080
 	echo $_publicUrlWithoutPort|grep -q ^https && _adminPort=8443
 	[ "$_adminPort" == "$_apiPort" ] && $_adminPort=`expr $_adminPort + 1`
@@ -710,7 +715,7 @@ function upgrade_to_admin {
 			*) echo "bad usage"; exit 1;;
 		esac
 	done
-	local adminUrl="$_publicUrlWithoutPort:$_adminPort"
+	local _adminUrl="$_publicUrlWithoutPort:$_adminPort"
 	echo "You are about to upgrade your CodeStream On-Prem installation to use
 the new admin service which migrates your configuration into the mongo
 database.
@@ -736,7 +741,7 @@ and use the command line options to change their values
 	export CS_MONGO_URL=$_mongoUrl
 	export CS_USE_ADMIN=1
 	#  load config into mongo, setting the public-facing admin port and import SSL/TLS certs/keys
-	run_script_via_api shared/codestream-configs/bin/mongo-config-loader.js --mongo-url $CS_MONGO_URL --add-cfg-file /opt/config/codestream-services-config.json --desc "import codestream-config-services.json" --import-keys --first-cfg-hook --admin-port $_adminPort || { echo "failed to load config"; exit 1; }
+	run_script_via_api shared/codestream_configs/bin/mongo-config-loader.js --mongo-url $CS_MONGO_URL --load /opt/config/codestream-services-config.json --desc "import codestream-config-services.json" --import-keys --first-cfg-hook --admin-port $_adminPort || { echo "failed to load config"; exit 1; }
 	mv $CS_ROOT/codestream-services-config.json $CS_ROOT/codestream-services-config.json.loaded-into-db
 
 	start_containers --not-mongo
@@ -789,6 +794,8 @@ export CS_CONTAINERS="csapi csmailout csbcast csrabbitmq"
 
 # touch mongo.off if user-provided mongodb server
 [ -f $CS_ROOT/mongo.off ] && export CS_RUN_MONGO=0 || export CS_RUN_MONGO=1
+
+[ -n "$OPI_TOP" -a -d "$OPI_TOP/install-scripts" ] && export CS_OPI_SANDBOX=1 || export CS_OPI_SANDBOX=0
 
 ### ------ Checkout this host system for compatibility
 check_env || exit 1

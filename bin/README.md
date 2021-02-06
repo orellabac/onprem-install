@@ -18,11 +18,11 @@ mdb-backup                   mdb-dump-db                  mdb-vars
 mdb-backup-util              mdb-help
 %
 ```
-Generally speaking, scripts should be executable and, if they use an
-interpreter, should include the following first line which will _locate_
-it in the environment in lieu of assuming a fixed location.
+Generally speaking, scripts should be executable and, if they use an interpreter
+such as bash, python or node, should include the following first line which
+will _locate_ it in the environment in lieu of assuming a fixed location.
 ```
-!#/usr/bin/env <interpreter>
+#!/usr/bin/env <interpreter>
 ```
 
 ## Help and Usage

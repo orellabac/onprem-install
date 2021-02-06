@@ -1,6 +1,11 @@
 #!/bin/bash
 
-[ -z "$CS_RESET_INSTALLATION_ACK" ] && echo "you must export CS_RESET_INSTALLATION_ACK=1 to run this. It will wipe the db" && exit 1
+# desc# reset a cs docker installation (deletes ALL data)
+
+[ -z "$OPI_RESET_INSTALLATION_ACK" ] && echo "you must export OPI_RESET_INSTALLATION_ACK=1 to run this. It will wipe the db" && exit 1
+[ -z "$1" ] && echo "usage: $0 -f" && exit 1
+
+cd $OPI_DATA
 ./codestream --reset || exit 1
-rm -rf util/ mongo.url terms.txt container-versions
+rm -f util mongo.url terms.txt .tos-agreed container-versions
 docker volume rm $(docker volume ls |grep -v VOL|awk '{print $2}')
