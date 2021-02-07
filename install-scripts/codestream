@@ -741,7 +741,7 @@ and use the command line options to change their values
 	export CS_MONGO_URL=$_mongoUrl
 	export CS_USE_ADMIN=1
 	#  load config into mongo, setting the public-facing admin port and import SSL/TLS certs/keys
-	run_script_via_api shared/codestream_configs/bin/mongo-config-loader.js --mongo-url $CS_MONGO_URL --load /opt/config/codestream-services-config.json --desc "import codestream-config-services.json" --import-keys --first-cfg-hook --admin-port $_adminPort || { echo "failed to load config"; exit 1; }
+	run_script_via_api shared/codestream_configs/bin/mongo-config-loader.js --mongo-url $CS_MONGO_URL --load /opt/config/codestream-services-config.json --desc "import codestream-config-services.json" --first-cfg-hook --admin-port $_adminPort || { echo "failed to load config"; exit 1; }
 	mv $CS_ROOT/codestream-services-config.json $CS_ROOT/codestream-services-config.json.loaded-into-db
 
 	start_containers --not-mongo
