@@ -60,7 +60,6 @@ module.exports = {
 						'issues/bitbucket',
 						'issues/github',
 						'issues/gitlab',
-						'issues/jira',
 						'issues/trello',
 					],
 					'Other Integrations': ['otherintegrations/okta'],
