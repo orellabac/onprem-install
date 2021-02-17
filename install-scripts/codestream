@@ -11,8 +11,10 @@ Usage:
     https//docs.codestream.com/onprem/
 
   QuickStart
-    $cmd --quickstart [--public-host <hostname-or-ip>] [--api-port <port>] \\
-                            [--bcast-port <port>] [--admin-port <port>] [--mongo-url <url>]
+    $cmd --quickstart [--topology { hostname | ip } \\
+                            [--public-host <hostname-or-ip>] \\
+                            [--api-port <port>] [--bcast-port <port>] [--admin-port <port>] \\
+                            [--mongo-url <url>]
 
   Container Control
     $cmd { --start | --stop | --restart | --reset | --status } [--not-mongo]
@@ -99,6 +101,19 @@ function get_uuid {
 	echo $uuid
 }
 
+function guess_primary_ip {
+	# AWS ec2 insetances
+	which ec2-metadata >/dev/null 2>&1 && ec2-metadata --local-ipv4 | awk '{print $2}' && return
+	# proc fs
+	if [ -f /proc/net/route ]; then
+		local default_iface=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
+		local x = `ip addr show dev "$default_iface" | awk '$1 == "inet" { sub("/.*", "", $2); print $2 }'`
+		[ -n "$x" ] && echo $x && return
+	fi
+	# last resource - this isn't a good idea because hostname's output is unordered
+	hostname -I | awk '{print $1}'
+	return
+}
 
 
 ############################################################
@@ -545,7 +560,7 @@ function quickstart {
 	local _apiPort=80
 	local _bcastPort=12080
 	local _adminPort=8080
-	local _fqhn=`hostname`
+	local _fqhn=`hostname` # hostname is the default topology
 	local _mongoUrl=mongodb://localhost/codestream
 	local interactive=1
 	local _x
@@ -554,13 +569,21 @@ function quickstart {
 	while [ $# -gt 0 ]
 	do
 		case $1 in
-		--public-host) _fqhn=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_HOST=$2"; shift 2;;
-		--api-port) _apiPort=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_PORT=$2"; shift 2;;
-		--admin-port) _adminPort=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_ADMIN_PORT=$2"; shift 2;;
-		--bcast-port) _bcastPort=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_BROADCASTER_PORT=$2"; shift 2;;
-		--mongo-url) _mongoUrl=$2; shift 2;;
-		--agree-to-terms) interactive=0; shift;;
-		*) echo "bad usage"; exit 1;;
+			--topology)
+				[ "$2" == hostname ] && _fqdn=`hostname`
+				[ "$2" == ip ] && _fqdn=$(guess_primary_ip)
+				[ -z "$2"  -o  \( "$2" != "ip"  -a  "$2" != "hostname" \) ] && echo "bad usage. Specify a 'hostname' or 'ip' topology." && exit 1
+				shift 2;;
+			--public-host)
+				[ _fqdn == ip ] && _fqdn=$(guess_primary_ip) || _fqdn=$2
+				apiEnv="$apiEnv --env CS_API_SET_PUBLIC_HOST=$2"
+				shift 2;;
+			--api-port) _apiPort=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_PORT=$2"; shift 2;;
+			--admin-port) _adminPort=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_ADMIN_PORT=$2"; shift 2;;
+			--bcast-port) _bcastPort=$2; apiEnv="$apiEnv --env CS_API_SET_PUBLIC_BROADCASTER_PORT=$2"; shift 2;;
+			--mongo-url) _mongoUrl=$2; shift 2;;
+			--agree-to-terms) interactive=0; shift;;
+			*) echo "bad usage"; exit 1;;
 		esac
 	done
 	[ $interactive -eq 0 ] && touch $CS_ROOT/.tos-agreed || accept_tos
@@ -593,6 +616,18 @@ If this is not what you want, press CTRL-C and specify additional options:   $0 
 ############################################################
 ## Logs & Support
 ############################################################
+
+function tail_logs {
+	local numLines="$1"
+	[ -z "$numLines" ] && numLines=10
+	local containers="csapi csbcast csmailout"
+	[ $CS_USE_ADMIN -eq 1 ] && containers="$containers csopadm"
+	local service
+	for service in $containers
+	do
+		echo "=========== $service ==========="; docker logs --tail $numLines $service; echo
+	done
+}
 
 function capture_logs {
 	local since=$1
@@ -822,6 +857,7 @@ load_container_versions
 [ "$1" == "--repair-db" ] && { repair_db "$2"; exit $?; }
 [ "$1" == "--update-containers" ] && shift && { update_containers_except_mongo --force "$@"; exit $?; }
 [ "$1" == "--logs" ] && { capture_logs "$2"; exit $?; }
+[ "$1" == "--logtail" ] && shift && { tail_logs "$@"; exit $?; }
 [ "$1" == "--backup" ] && { backup_mongo $CS_MONGO_URL; exit $?; }
 [ "$1" == "--full-backup" ] && { full_backup; exit $?; }
 [ "$1" == "--restore" ] && { [ "$2" == latest ] && { { restore_mongo $CS_MONGO_URL "$(/bin/ls $CS_ROOT/backups/dump_*.gz | tail -1)"; exit $?; } || { restore_mongo $CS_MONGO_URL $2; exit $?; } } }
