@@ -621,7 +621,7 @@ function tail_logs {
 	local numLines="$1"
 	[ -z "$numLines" ] && numLines=10
 	local containers="csapi csbcast csmailout"
-	[ $CS_USE_ADMIN -eq 1 ] && containers="$containers csopadm"
+	[ $CS_USE_ADMIN -eq 1 ] && containers="$containers csadmin"
 	local service
 	for service in $containers
 	do
@@ -641,7 +641,7 @@ function capture_logs {
 	docker logs --since $since csbcast >$tmpDir/broadcaster.log 2>&1
 	docker logs --since $since csrabbitmq >$tmpDir/rabbitmq.log 2>&1
 	docker logs --since $since csmailout >$tmpDir/mailout.log 2>&1
-	[ $CS_USE_ADMIN -eq 1 ] && docker logs --since $since csopadm >$tmpDir/opadm.log 2>&1
+	[ $CS_USE_ADMIN -eq 1 ] && docker logs --since $since csadmin >$tmpDir/opadm.log 2>&1
 	tar -czpf $CS_ROOT/log-capture/codestream-onprem-logs.$now.tgz -C $HOME $logdir
 	[ -d "$tmpDir" ] && /bin/rm -rf $tmpDir
 	ls -l $CS_ROOT/log-capture/codestream-onprem-logs.$now.tgz
