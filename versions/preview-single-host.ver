@@ -1,7 +1,7 @@
-apiDockerVersion=8.2.24-199
-broadcasterDockerVersion=8.2.22-68
+apiDockerVersion=8.2.25-201
+broadcasterDockerVersion=8.2.23-70
 dtPython3DockerVersion=0.0.0
-mailoutDockerVersion=8.2.21-71
+mailoutDockerVersion=8.2.22-72
 mongoDockerVersion=3.4.9
-onPremVersion=8.2.17
+onPremVersion=8.2.18
 rabbitDockerVersion=0.0.0
