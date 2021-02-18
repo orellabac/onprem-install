@@ -11,7 +11,7 @@ Usage:
     https//docs.codestream.com/onprem/
 
   QuickStart
-    $cmd --quickstart [--topology { hostname | ip } \\
+    $cmd --quickstart [--topology { hostname | ip }] \\
                             [--public-host <hostname-or-ip>] \\
                             [--api-port <port>] [--bcast-port <port>] [--admin-port <port>] \\
                             [--mongo-url <url>]
@@ -241,7 +241,8 @@ function update_containers_except_mongo {
 	else
 		echo "You are already running the latest container versions"
 	fi
-	[ -z "$nostart" ] && start_containers
+	[ -n "$nostart" ] && return 0
+	start_containers
 }
 
 
@@ -456,6 +457,7 @@ function start_containers {
 	run_or_start_container csbcast
 	run_or_start_container csmailout
 	[ $CS_USE_ADMIN -eq 1 ] && run_or_start_container csadmin
+	return 0
 }
 
 # high-level routine to stop all containers
@@ -514,7 +516,7 @@ function load_docker_containers_from_package {
 	docker load -i $CS_ROOT/.docker-images/api.$apiDockerVersion.docker || exit 1
 	docker load -i $CS_ROOT/.docker-images/broadcaster.$broadcasterDockerVersion.docker || exit 1
 	docker load -i $CS_ROOT/.docker-images/mailout.$mailoutDockerVersion.docker || exit 1
-	[ $CS_USE_ADMIN -eq 1 ] && docker load -i $CS_ROOT/.docker-images/opadm.$opadmDockerVersion.docker || exit 1
+	[ $CS_USE_ADMIN -eq 1 ] && { docker load -i $CS_ROOT/.docker-images/opadm.$opadmDockerVersion.docker || exit 1; }
 	docker load -i $CS_ROOT/.docker-images/rabbitmq.$rabbitDockerVersion.docker || exit 1
 	docker load -i $CS_ROOT/.docker-images/python.$dtPython3DockerVersion.docker || exit 1
 	docker load -i $CS_ROOT/.docker-images/mongo.$mongoDockerVersion.docker || exit 1
