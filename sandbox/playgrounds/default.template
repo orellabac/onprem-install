@@ -1,0 +1,14 @@
+
+#desc# onprem-install playground
+
+#playgroundName# opi
+#sandboxTypes# onprem_install
+#sandboxes# {{SBNAME_onprem_install}}
+#environment# local
+
+dt_load {{SBNAME_onprem_install}}
+cd $OPI_TOP
+
+# uncomment these if you use iterm2 and want to colorize your tabs
+# . $DT_TOP/lib/iterm2-utils.sh
+# it2_tab_rgb {{SBNAME_onprem_install}} 88 188 145

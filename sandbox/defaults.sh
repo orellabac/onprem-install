@@ -37,8 +37,8 @@ sandutil_load_options $OPI_SANDBOX || { echo "failed to load options" >&2 && ret
 # Uncomment and setup if node is required. Available versions can be seen
 # with the command:
 #   ssh $DT_CLOUD_SERVER "ls /home/web/SandboxRepos/software/node-$DT_OS_TYPE-*"
-# export OPI_NODE_VER=latest
-# export PATH=$OPI_SANDBOX/node/bin:$OPI_TOP/node_modules/.bin:$PATH
+export OPI_NODE_VER=12.14.1
+export PATH=$OPI_SANDBOX/node/bin:$OPI_TOP/node_modules/.bin:$PATH
 
 
 # Add $MY_SANDBOX/bin to the search path
