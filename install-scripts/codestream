@@ -104,7 +104,7 @@ function make_self_signed_cert {
 function get_uuid {
 	# curl -s https://www.uuidtools.com/api/decode/9084b876-4209-4e84-91d4-a7221c63ad65 | python3 -m json.tool
 	if [ -z "$installFromPackage" ]; then
-		local uuid=$(curl -s https://www.uuidtools.com/api/generate/timestamp-first|cut -f2 -d'"')
+		local uuid=$(uuidgen -t)
 	else
 		local uuid=$(cat $codestreamRoot/.UUID)
 	fi
